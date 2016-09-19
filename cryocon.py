@@ -1,6 +1,7 @@
 from serial import Serial
 import StringIO
 import numpy as np
+from wiznet import SerialFromEthernet
 
 def curve_2_340(filename):
     with open(filename, 'r') as f:
@@ -56,7 +57,10 @@ class CryoConChannel(object):
 
 class CryoCon(object):
     def __init__(self, port='COM1'):
-        self.serial = Serial(port)
+        if port.find("COM")>=0:
+            self.serial = Serial(port)
+        else:
+            self.serial = SerialFromEthernet(port)
         self.timeout = 1
         self.ch_a = CryoConChannel(self, "A")
         self.ch_b = CryoConChannel(self, "B")
