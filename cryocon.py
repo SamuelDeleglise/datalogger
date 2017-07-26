@@ -1,5 +1,5 @@
 from serial import Serial
-import StringIO
+from io import StringIO
 import numpy as np
 from wiznet import SerialFromEthernet
 
@@ -52,7 +52,8 @@ class CryoConChannel(object):
 
     @property
     def temp(self):
-        return float(self.parent.ask("INPUT %s:TEMPER?"%self.name))
+        val = self.parent.ask("INPUT %s:TEMPER?"%self.name)
+        return float(val)
 
 
 class CryoCon(object):

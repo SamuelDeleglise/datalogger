@@ -1,10 +1,14 @@
 from serial import Serial
+from wiznet import SerialFromEthernet
 
 class LakeShore331(object):
     def __init__(self, port="COM1"):
-        self.serial = Serial(port)
-        self.serial.setParity('O')
-        self.serial.setByteSize(7)
+        if port.find("COM")>=0:
+            self.serial = Serial(port)
+            self.serial.parity = 'O'
+            self.serial.bytesize = 7
+        else:
+            self.serial = SerialFromEthernet(port)
 
     def write(self, val):
         self.serial.write(val + '\r\n')
