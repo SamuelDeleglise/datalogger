@@ -52,7 +52,7 @@ class CryoConChannel(object):
 
     @property
     def temp(self):
-        val = self.parent.ask("INPUT %s:TEMPER?"%self.name)
+        val = self.parent.ask(("INPUT %s:TEMPER?"%self.name).encode())
         return float(val)
 
 
@@ -67,7 +67,7 @@ class CryoCon(object):
         self.ch_b = CryoConChannel(self, "B")
 
     def write(self, val):
-        self.serial.write(val + '\n\r')
+        self.serial.write(val + b'\n\r')
 
     def ask(self, string):
         self.write(string)

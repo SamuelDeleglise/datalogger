@@ -28,7 +28,10 @@ class HeliumDepth(object):
     def ask_level(self):
         res = self.ask("G")
         i = res.find('mm') - 4
-        return int(res[i:i + 4])
+        try:
+            return int(res[i:i + 4])
+        except ValueError:
+            pass
 
     def ask_curve(csv_filename, picture_filename):
         pass

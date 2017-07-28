@@ -17,7 +17,7 @@ class SerialFromEthernet(object):
         st = ''
         while(True):
             try:
-                st+=self.socket.recv(self.BUFFER_SIZE)
+                st+=self.socket.recv(self.BUFFER_SIZE).decode('utf-8')
             except socket.error:
                 return st
 

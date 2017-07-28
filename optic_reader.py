@@ -10,7 +10,7 @@ class OpticReader(object):
 
     def count(self):
         r = requests.get("http://"+self.ip+"/Python")
-        data = r.content.split(';')
+        data = r.content.split(b';')
         count = float(data[0])
         t = float(data[1])
         self.datas.append(count)
@@ -29,7 +29,7 @@ class OpticReader(object):
 
     def derivative(self):
         r = requests.get("http://" + self.ip + "/Python")
-        data = r.content.split(';')
+        data = r.content.split(b';')
         count = float(data[0])
         t = float(data[1])
         if len(self.datas)>0:
@@ -42,7 +42,10 @@ class OpticReader(object):
                 i=i-1
             self.datas.append(count)
             self.times.append(t)
-            return 1000000.*dy/dt
+            if dt!=0:
+                return 1000000.*dy/dt
+            else:
+                return 0.
         else:
             self.datas.append(count)
             self.times.append(t)

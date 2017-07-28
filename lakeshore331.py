@@ -1,5 +1,6 @@
 from serial import Serial
 from wiznet import SerialFromEthernet
+import socket
 
 class LakeShore331(object):
     def __init__(self, port="COM1"):
@@ -14,16 +15,22 @@ class LakeShore331(object):
         self.serial.write(val + '\r\n')
 
     def readline(self):
-        st = ''
-        ch = ''
-        while (ch != '\r'):
-            ch = self.serial.read()
-            st += ch
-        return st[:-1]
+        st = b''
+        ch = b''
+        while (ch != b'\r'):
+            try:
+                ch = self.serial.socket.recv(1)
+                st += ch
+            except socket.error :
+                return st
+        return st
 
     def ask(self, val):
         self.write(val)
         return self.readline()
 
     def temp(self, ch='A'):
-        return float(self.ask("KRDG? " + ch))
+        try:
+            return float(self.ask("KRDG? " + ch).decode('utf-8'))
+        except ValueError:
+            pass
