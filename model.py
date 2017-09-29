@@ -124,6 +124,9 @@ class DataLogger(object):
         if not osp.exists(self.config_path):
             with open(self.config_path, 'w') as f:
                 json.dump("", f)
+        with open(self.config_path, 'r') as f:
+            dic = json.loads(f.read())
+        self._previous_directory = dic['directory']
         self.select_directory()
 
     @property
@@ -140,7 +143,8 @@ class DataLogger(object):
             json.dump(dict(directory=val), f)
 
     def select_directory(self):
-        directory = self.dialog.getExistingDirectory()
+        directory = self.dialog.getExistingDirectory(
+            directory=self._previous_directory)
         self.directory = directory
 
     def add_channel(self, name, callback):
@@ -323,4 +327,4 @@ class DataLoggerGui(QtWidgets.QMainWindow):
     def add_read_only_channel(self, channel):
         self._dock_tree.tree.add_read_only_channel(channel)
 
-DLG = DataLogger()
+
