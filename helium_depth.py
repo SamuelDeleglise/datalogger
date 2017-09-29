@@ -31,7 +31,7 @@ class HeliumDepth(object):
         try:
             return int(res[i:i + 4])
         except ValueError:
-            pass
+            return 0
 
     def ask_curve(csv_filename, picture_filename):
         pass

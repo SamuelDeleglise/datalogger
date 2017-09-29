@@ -33,4 +33,4 @@ class LakeShore331(object):
         try:
             return float(self.ask("KRDG? " + ch).decode('utf-8'))
         except ValueError:
-            pass
+            return 0

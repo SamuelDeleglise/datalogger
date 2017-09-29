@@ -3,55 +3,63 @@ import pyqtgraph as pg
 import json
 import time
 import os.path as osp
-import os
+import os, struct
+import numpy as np
 
-class Channel(object):
-    """A floating point is returned every period seconds"""
 
-    def __init__(self, name, callback=None, period=10, parent=None):
+class ReadOnlyChannel(object):
+    def __init__(self, name, parent=None):
         if parent is None:
             parent = DLG
         self.parent = parent
-        self.timer = QtCore.QTimer()
-        self.period = period
         self.name = name
-        self.callback = callback
-        self.timer.setSingleShot(False)
-        self.timer.timeout.connect(self.measure)
-        self.path = osp.join(os.environ["HOMEDRIVE"], os.environ[
-            "HOMEPATH"], '.datalogger')
-        if not osp.exists(self.path):
-            os.mkdir(self.path)
-        self.configfile = osp.join(self.path, "config.json")
-        if not osp.exists(self.configfile):
-            with open(self.configfile, 'w') as f:
-                json.dump(self.default_config(), f)
-        with open(self.configfile, 'r') as f:
-            self.config = json.loads(f.read())
+        #self.old_path = osp.join(os.environ["HOMEDRIVE"], os.environ[
+        #   "HOMEPATH"], '.datalogger','cooldown_A3')
+        #self.path = osp.join("Z:\ManipMembranes\data\database",time.strftime(
+        #    "%Y\%m\%d"))
+        #if not osp.exists(self.path):
+        #    os.mkdir(self.path)
+
+
         self.times = []
         self.values = []
-        if osp.exists(self.logfile):
-            self.load_data()
 
-    '''@property
-    def config(self):
-        return self.parent.config'''
+    def add_point(self, val, time):
+        self.times.append(time)
+        self.values.append(val)
+
+    def plot(self):
+        self.curve.setData(self.times, self.values)
+
+class Channel(ReadOnlyChannel):
+    """A floating point is returned every period seconds"""
+
+    def __init__(self, name, callback=None, period=10, parent=None):
+        super(Channel, self).__init__(name, parent)
+        if parent is not None:
+            self.config_path=self.parent.config_path
+        self.timer = QtCore.QTimer()
+        self.callback = callback
+        self.period = period
+        self.timer.setSingleShot(False)
+        self.timer.timeout.connect(self.measure)
+
+
+    @property
+    def filename(self):
+        return osp.join(self.parent.directory,self.name+'.dat')
 
     @property
     def logfile(self):
         return self.config["logfile"]
 
-    def default_config(self):
-        return dict(logfile=osp.join(self.path, "logfile.json"))
-
     def load_data(self):
-        with open(self.logfile, 'r') as f:
-            for line in f:
-                name, val, time = json.loads(line)
-                if name==self.name:
-                    self.values.append(val)
-                    self.times.append(time)
-
+        with open(self.filename, 'rb') as f:
+            data = np.frombuffer(f.read(), dtype=float)
+        times = data[::2]
+        values = data[1::2]
+        for i in range(len(times)):
+            self.add_point(values[i], times[i])
 
     @property
     def active(self):
@@ -63,6 +71,7 @@ class Channel(object):
             self.start()
         else:
             self.stop()
+        self.update_json(active=val)
         return val
 
     def start(self):
@@ -75,6 +84,7 @@ class Channel(object):
     @period.setter
     def period(self, val):
         self.timer.setInterval(val*1000)
+        self.update_json(period=val)
         return val
 
     def measure(self):
@@ -83,10 +93,9 @@ class Channel(object):
         stdout.flush()
         val = self.callback()
         time_ = time.time()
-        with open(self.logfile, 'a') as f:
-            json.dump([self.name, val, time_], f)
-            f.write('\n')
-            f.close()
+        with open(self.filename, 'ab') as f:
+            f.write(struct.pack('d', time_))
+            f.write(struct.pack('d', val))
         self.times.append(time_)
         self.values.append(val)
         self.plot()
@@ -97,12 +106,91 @@ class Channel(object):
     def stop(self):
         self.timer.stop()
 
+    def setup(self, **kwargs):
+        for item in kwargs.keys():
+            setattr(self, item, kwargs[item])
+        self.update_json(**kwargs)
+
+    def update_json(self, **kwargs):
+        with open(self.config_path, 'r') as f:
+            dic = json.load(f)
+        for item in kwargs.keys():
+            dic[item]=kwargs[item]
+        with open(self.config_path, 'w') as f:
+            json.dump(dic, f)
+
 class DataLogger(object):
     def __init__(self):
         self.channels = {}
+        self.loaded_channels = {}
+        self.widget = None
+        self._directory = None
+        self.dialog = QtWidgets.QFileDialog()
+        self.config_path = osp.join(os.environ["HOMEDRIVE"], os.environ[
+           "HOMEPATH"], '.datalogger','config.json')
+        if not osp.exists(self.config_path):
+            with open(self.config_path, 'w') as f:
+                json.dump("", f)
+        self.select_directory()
+
+    @property
+    def directory(self):
+        if self._directory is None:
+            with open(self.config_path, 'r') as f:
+                self._directory = json.loads(f.read())['directory']
+        return self._directory
+
+    @directory.setter
+    def directory(self, val):
+        self._directory = val
+        with open(self.config_path, 'w') as f:
+            json.dump(dict(directory=val), f)
+
+    def select_directory(self):
+        directory = self.dialog.getExistingDirectory()
+        self.directory = directory
 
     def add_channel(self, name, callback):
-        self.channels[name] = Channel(name, callback)
+        self.channels[name] = Channel(name, callback, parent=self)
+        with open(self.config_path, 'r') as f:
+            dic = json.load(f)
+            if name in dic:
+                self.channels[name].setup(dict(name, dic[name]))
+
+
+
+    def add_read_only_channel(self, name):
+        self.loaded_channels[name] = ReadOnlyChannel(name, parent=self)
+
+    def load(self):
+        filename, accept = self.dialog.getOpenFileName()
+        if filename is not None:
+            print(filename)
+            if '.json' in filename:
+                with open(filename, 'r') as f:
+                    for line in f:
+                        name, val, time = json.loads(line)
+                        if not name in self.loaded_channels:
+                            self.add_read_only_channel(name)
+                        self.loaded_channels[name].add_point(val=val, time=time)
+                for ch in self.loaded_channels.values():
+                    if self.widget is not None:
+                        self.widget.add_read_only_channel(ch, filename)
+            elif '.dat' in filename:
+                with open(filename, 'rb') as f:
+                    data = np.frombuffer(f.read(), dtype=float)
+                times = data[::2]
+                values = data[1::2]
+                name=""
+                for s in filename.split('/')[-2::]:
+                    name=name+'/'+s
+                name = name.split('.')[0]
+                if not name in self.loaded_channels:
+                    self.add_read_only_channel(name)
+                    for i in range(len(times)):
+                        self.loaded_channels[name].add_point(val=values[i],
+                                                         time=times[i])
+                    self.widget.add_read_only_channel(name)
 
     def gui(self):
         self.widget = DataLoggerGui(self)
@@ -114,6 +202,8 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
         self.setHeaderLabels(["Active", "channel", "period"])
         self.setColumnCount(3)
         self.dataloggergui = dataloggergui
+        self.datalogger = self.dataloggergui.datalogger
+        self.config_path = self.datalogger.config_path
         self.add_channels()
         self.itemChanged.connect(self.update)
 
@@ -130,15 +220,51 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
         for index, ch in enumerate(
                 self.dataloggergui.datalogger.channels.keys()):
             color = colors[index%len(colors)]
-            chan = self.dataloggergui.datalogger.channels[ch]
-            item = QtWidgets.QTreeWidgetItem(["", ch, str(chan.period)])
-            chan.treeitem = item
-            chan.curve = self.dataloggergui.plot_item.plot(pen=color[0])
-            chan.plot()
-            self.addTopLevelItem(item)
-            item.setCheckState(0, chan.active)
-            item.setBackground(1, QtGui.QColor(color))
-            item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            self.add_channel(ch, color)
+
+    '''
+    def add_read_only_channels(self):
+        colors = ['white', 'yellow', 'pink', 'purple', 'brown']
+        for index, ch in enumerate(
+                self.dataloggergui.datalogger.loaded_channels.keys()):
+            color = colors[index%len(colors)]
+            print (index)
+            #print("ch = "+str(ch))
+            self.add_read_only_channel(ch, color)
+    '''
+
+    def add_read_only_channel(self, ch):
+        colors = ['white', 'yellow', 'pink', 'purple', 'brown', 'orange']
+        index = len(self.dataloggergui.datalogger.loaded_channels)
+        color = colors[index%len(colors)]
+        if color=='pink':
+            color = QtGui.QColor(236,124,240)
+        elif color=='brown':
+            color = QtGui.QColor(182,90,90)
+        else:
+            color = QtGui.QColor(color)
+        chan = self.dataloggergui.datalogger.loaded_channels[ch]
+        item = QtWidgets.QTreeWidgetItem(["", ch, "0"])
+        chan.treeitem = item
+        chan.curve = self.dataloggergui.plot_item.plot(pen=color)
+        chan.plot()
+        self.addTopLevelItem(item)
+        #item.setCheckState(0, chan.active)
+        item.setBackground(1, color)
+        #item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+
+    def add_channel(self, ch, color):
+        chan = self.dataloggergui.datalogger.channels[ch]
+        item = QtWidgets.QTreeWidgetItem(["", ch, str(chan.period)])
+        chan.treeitem = item
+        chan.curve = self.dataloggergui.plot_item.plot(pen=color[0])
+        chan.plot()
+        self.addTopLevelItem(item)
+        item.setCheckState(0, chan.active)
+        item.setBackground(1, QtGui.QColor(color))
+        item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+
+
 
 class MyDockTreeWidget(QtWidgets.QDockWidget):
     def __init__(self, datalogger):
@@ -147,10 +273,10 @@ class MyDockTreeWidget(QtWidgets.QDockWidget):
         self.setWidget(self.tree)
 
 class TimeAxisItem(pg.AxisItem):
-    """
+
     def __init__(self, *args, **kwargs):
         super(TimeAxisItem, self).__init__(*args, **kwargs)
-    """
+
 
     def tickStrings(self, values, scale, spacing):
         # PySide's QTime() initialiser fails miserably and dismisses args/kwargs
@@ -161,41 +287,48 @@ class TimeAxisItem(pg.AxisItem):
                 values]
 
 class DataloggerMenu(QtWidgets.QMenuBar):
-    def __init__(self):
+    def __init__(self, datalogger):
         super(DataloggerMenu, self).__init__()
         self.menufile = QtWidgets.QMenu("File")
         self.addMenu(self.menufile)
 
         self.action_load = QtWidgets.QAction("Load...", self)
         self.action_new = QtWidgets.QAction("New file...", self)
+        self.datalogger = datalogger
         self.action_load.triggered.connect(self.load)
         self.action_new.triggered.connect(self.new_file)
         self.menufile.addAction(self.action_new)
         self.menufile.addAction(self.action_load)
-        self.dialog = QtWidgets.QFileDialog()
-
-    def load(self):
-        accept, filename = self.dialog.getOpenFileName()
-
 
     def new_file(self):
         accept, filename = self.dialog.getSaveFileName()
         if accept:
             self.logfile = filename
 
+    def load(self):
+        self.datalogger.load()
+
+
 class DataLoggerGui(QtWidgets.QMainWindow):
     def __init__(self, datalogger):
         super(DataLoggerGui, self).__init__()
         self.datalogger = datalogger
         self.graph = pg.GraphicsWindow(title="temperatures")
-        self.plot_item = self.graph.addPlot(title="temperatures", axisItems={'bottom': TimeAxisItem(orientation='bottom')})
+        self.plot_item = self.graph.addPlot(title="temperatures", axisItems={
+            'bottom': TimeAxisItem(orientation='bottom')})
         self.plot_item.showGrid(y=True, alpha=1.)
         self.setCentralWidget(self.graph)
         self._dock_tree = MyDockTreeWidget(self)
         self.tree = self._dock_tree.tree
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._dock_tree)
-        self.menubar = DataloggerMenu()
+        self.menubar = DataloggerMenu(datalogger)
         self.setMenuBar(self.menubar)
         self.show()
+
+    def add_read_only_channel(self, channel):
+        self._dock_tree.tree.add_channel(channel)
+
+    def add_read_only_channel(self, channel):
+        self._dock_tree.tree.add_read_only_channel(channel)
 
 DLG = DataLogger()
