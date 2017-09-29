@@ -13,13 +13,6 @@ class ReadOnlyChannel(object):
             parent = DLG
         self.parent = parent
         self.name = name
-        #self.old_path = osp.join(os.environ["HOMEDRIVE"], os.environ[
-        #   "HOMEPATH"], '.datalogger','cooldown_A3')
-        #self.path = osp.join("Z:\ManipMembranes\data\database",time.strftime(
-        #    "%Y\%m\%d"))
-        #if not osp.exists(self.path):
-        #    os.mkdir(self.path)
-
 
         self.times = []
         self.values = []
@@ -125,7 +118,7 @@ class DataLogger(object):
         self.loaded_channels = {}
         self.widget = None
         self._directory = None
-        self.dialog = QtWidgets.QFileDialog()
+        self.dialog = QtWidgets.QFileDialog
         self.config_path = osp.join(os.environ["HOMEDRIVE"], os.environ[
            "HOMEPATH"], '.datalogger','config.json')
         if not osp.exists(self.config_path):
@@ -165,7 +158,6 @@ class DataLogger(object):
     def load(self):
         filename, accept = self.dialog.getOpenFileName()
         if filename is not None:
-            print(filename)
             if '.json' in filename:
                 with open(filename, 'r') as f:
                     for line in f:
