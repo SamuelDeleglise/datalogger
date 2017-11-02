@@ -6,8 +6,14 @@ class SerialFromEthernet(object):
 
     def __init__(self, ip, baudrate=9600, ):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((ip, self.TCP_PORT))
-        self.socket.setblocking(False)
+        self.socket.settimeout(0.1)
+        try:
+            self.socket.connect((ip, self.TCP_PORT))
+        except socket.error:
+            print("could not connect to ip:" + str(ip))
+        else:
+            self.socket.setblocking(False)
+
         #self.socket.settimeout(1)
 
     def write(self, val):

@@ -52,8 +52,11 @@ class CryoConChannel(object):
 
     @property
     def temp(self):
-        val = self.parent.ask(("INPUT %s:TEMPER?"%self.name).encode())
-        return float(val)
+        try:
+            val = self.parent.ask(("INPUT %s:TEMPER?"%self.name).encode())
+            return float(val)
+        except ValueError:
+            return 0.
 
 
 class CryoCon(object):
