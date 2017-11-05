@@ -113,6 +113,9 @@ class Channel(ReadOnlyChannel):
             json.dump(dic, f)
 
 class DataLogger(object):
+    CONFIG_PATH = osp.join(os.environ["HOMEDRIVE"], os.environ[
+           "HOMEPATH"], '.datalogger')
+
     def __init__(self):
         self.channels = {}
         self.loaded_channels = {}
