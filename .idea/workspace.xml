@@ -20,7 +20,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="pressure_gauge.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="pressure_gauge.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pressure_gauge.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="221">
@@ -59,8 +59,8 @@
       <file leaf-file-name="model.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="4386">
-              <caret line="258" column="58" lean-forward="false" selection-start-line="258" selection-start-column="55" selection-end-line="258" selection-end-column="58" />
+            <state relative-caret-position="548">
+              <caret line="88" column="0" lean-forward="false" selection-start-line="88" selection-start-column="0" selection-end-line="90" selection-end-column="42" />
               <folding>
                 <element signature="e#0#41#0" expanded="true" />
               </folding>
@@ -68,30 +68,13 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="datalogger.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="datalogger.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/datalogger.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="13" column="10" lean-forward="false" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
+            <state relative-caret-position="187">
+              <caret line="172" column="36" lean-forward="false" selection-start-line="172" selection-start-column="36" selection-end-line="172" selection-end-column="36" />
               <folding>
-                <marker date="1509979325065" expanded="true" signature="552:5041" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="4524:4957" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="4552:4957" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="4997:5041" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="5108:5880" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="5117:5209" ph="&quot;&quot;&quot;...&quot;&quot;&quot;" />
-                <marker date="1509979325065" expanded="true" signature="5271:5385" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="5546:5699" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="5913:6101" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6132:6419" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6210:6319" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6333:6419" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6447:6538" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6573:6752" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6665:6732" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6794:6853" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6895:6954" ph="..." />
-                <marker date="1509979325065" expanded="true" signature="6991:7141" ph="..." />
+                <element signature="e#0#9#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -130,8 +113,8 @@
       <file leaf-file-name="widgets.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/widgets.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="510">
-              <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
+            <state relative-caret-position="408">
+              <caret line="36" column="45" lean-forward="false" selection-start-line="36" selection-start-column="45" selection-end-line="36" selection-end-column="45" />
               <folding>
                 <element signature="e#0#41#0" expanded="true" />
               </folding>
@@ -166,22 +149,22 @@
       <list>
         <option value="$PROJECT_DIR$/wiznet.py" />
         <option value="$PROJECT_DIR$/model.py" />
-        <option value="$PROJECT_DIR$/widgets.py" />
         <option value="$PROJECT_DIR$/lakeshore331.py" />
         <option value="$PROJECT_DIR$/start_script_template.py" />
-        <option value="$PROJECT_DIR$/datalogger.py" />
         <option value="$USER_HOME$/.datalogger/start_script.py" />
         <option value="$PROJECT_DIR$/run.py" />
         <option value="$PROJECT_DIR$/serial_interface.py" />
         <option value="$PROJECT_DIR$/pressure_gauge.py" />
+        <option value="$PROJECT_DIR$/widgets.py" />
+        <option value="$PROJECT_DIR$/datalogger.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="301" />
-    <option name="y" value="32" />
-    <option name="width" value="1400" />
-    <option name="height" value="1000" />
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="1936" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -365,10 +348,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="301" y="32" width="1400" height="1000" extended-state="0" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.25373134" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18123667" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -514,24 +497,7 @@
         <state relative-caret-position="221">
           <caret line="13" column="10" lean-forward="false" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
           <folding>
-            <marker date="1509979325065" expanded="true" signature="552:5041" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4524:4957" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4552:4957" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4997:5041" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5108:5880" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5117:5209" ph="&quot;&quot;&quot;...&quot;&quot;&quot;" />
-            <marker date="1509979325065" expanded="true" signature="5271:5385" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5546:5699" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5913:6101" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6132:6419" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6210:6319" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6333:6419" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6447:6538" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6573:6752" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6665:6732" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6794:6853" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6895:6954" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6991:7141" ph="..." />
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -561,58 +527,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/model.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4386">
-          <caret line="258" column="58" lean-forward="false" selection-start-line="258" selection-start-column="55" selection-end-line="258" selection-end-column="58" />
-          <folding>
-            <element signature="e#0#41#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/widgets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="510">
-          <caret line="33" column="0" lean-forward="false" selection-start-line="33" selection-start-column="0" selection-end-line="33" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#41#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/start_script_template.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="15" column="68" lean-forward="false" selection-start-line="15" selection-start-column="68" selection-end-line="15" selection-end-column="68" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/datalogger.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" column="10" lean-forward="false" selection-start-line="13" selection-start-column="10" selection-end-line="13" selection-end-column="10" />
-          <folding>
-            <marker date="1509979325065" expanded="true" signature="552:5041" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4524:4957" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4552:4957" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="4997:5041" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5108:5880" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5117:5209" ph="&quot;&quot;&quot;...&quot;&quot;&quot;" />
-            <marker date="1509979325065" expanded="true" signature="5271:5385" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5546:5699" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="5913:6101" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6132:6419" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6210:6319" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6333:6419" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6447:6538" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6573:6752" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6665:6732" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6794:6853" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6895:6954" ph="..." />
-            <marker date="1509979325065" expanded="true" signature="6991:7141" ph="..." />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -624,30 +543,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.datalogger/start_script.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="13" column="51" lean-forward="false" selection-start-line="13" selection-start-column="51" selection-end-line="13" selection-end-column="51" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/run.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="15" column="39" lean-forward="true" selection-start-line="15" selection-start-column="39" selection-end-line="15" selection-end-column="39" />
           <folding>
             <element signature="e#0#28#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/lakeshore331.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="22" lean-forward="true" selection-start-line="8" selection-start-column="22" selection-end-line="8" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -668,6 +569,54 @@
           <caret line="13" column="8" lean-forward="false" selection-start-line="13" selection-start-column="8" selection-end-line="13" selection-end-column="8" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lakeshore331.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="8" column="22" lean-forward="true" selection-start-line="8" selection-start-column="22" selection-end-line="8" selection-end-column="22" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/widgets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="408">
+          <caret line="36" column="45" lean-forward="false" selection-start-line="36" selection-start-column="45" selection-end-line="36" selection-end-column="45" />
+          <folding>
+            <element signature="e#0#41#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/model.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="548">
+          <caret line="88" column="0" lean-forward="false" selection-start-line="88" selection-start-column="0" selection-end-line="90" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#41#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.datalogger/start_script.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="221">
+          <caret line="13" column="51" lean-forward="false" selection-start-line="13" selection-start-column="51" selection-end-line="13" selection-end-column="51" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/datalogger.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="187">
+          <caret line="172" column="36" lean-forward="false" selection-start-line="172" selection-start-column="36" selection-end-line="172" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
           </folding>
         </state>
       </provider>

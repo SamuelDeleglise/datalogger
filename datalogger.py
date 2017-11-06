@@ -12,6 +12,7 @@ from asyncio import Future, ensure_future, CancelledError, \
 import quamash
 import asyncio
 import sys
+import struct
 
 from qtpy.QtWidgets import QApplication
 
@@ -38,17 +39,18 @@ class Channel(object):
 
         self.callback_func = None
 
-        if osp.exists(self.filename): # load existing data
-            self.load_data()
-        else: # create a data file
-            with open(self.filename, 'w') as f:
-                pass
         config = self.parent.get_config_from_file()
         if self.name in config["channels"]:
             self.load_config()
         else:
             self.save_config()
         self.widget = self.create_widget()
+
+        if osp.exists(self.filename): # load existing data (widget needs to exist to plot)
+            self.load_data()
+        else: # create a data file
+            with open(self.filename, 'w') as f:
+                pass
 
     def create_widget(self):
         return self.parent.widget.create_channel(self)
@@ -150,8 +152,9 @@ class Channel(object):
         """Load data from file"""
         with open(self.filename, 'rb') as f:
             data = np.frombuffer(f.read(), dtype=float)
-        self.times = data[::2]
-        self.values = data[1::2]
+        times = data[::2]
+        values = data[1::2]
+        self.plot_points(values, times)
 
     @property
     def filename(self):
@@ -167,11 +170,17 @@ class Channel(object):
             except BaseException as e:
                 print(self.name, ':', e)
             moment = time.time()
-            self.plot_point(val, moment)
+            self.plot_and_save_point(val, moment)
             await asyncio.sleep(self.delay)
 
-    def plot_point(self, val, moment):
+    def plot_and_save_point(self, val, moment):
+        with open(self.filename, 'ab') as f:
+            f.write(struct.pack('d', moment))
+            f.write(struct.pack('d', val))
         self.widget.plot_point(val, moment)
+
+    def plot_points(self, vals, times):
+        self.widget.plot_points(vals, times)
 
 class DataLogger(object):
     def __init__(self, directory=None):

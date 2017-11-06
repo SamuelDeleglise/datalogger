@@ -32,6 +32,11 @@ class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.times.append(moment)
         self.curve.setData(self.times, self.values)
 
+    def plot_points(self, vals, times):
+        self.values += [val for val in vals]
+        self.times += [time for time in times]
+        self.curve.setData(self.times, self.values)
+
     def show_error_state(self):
         color = 'red' if self.channel.error_state else 'green'
         self.setBackground(4, QtGui.QColor(color))
@@ -146,7 +151,6 @@ class DataLoggerWidget(QtWidgets.QMainWindow):
         self.menubar = DataloggerMenu(datalogger)
         self.setMenuBar(self.menubar)
         self.show()
-
 
     def create_channel(self, channel):
         self.current_channel_index +=1
