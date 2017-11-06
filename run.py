@@ -14,17 +14,17 @@ from wiznet import SerialFromEthernet
 APP = QtWidgets.QApplication(["datalogger"])
 CRC = CryoCon()
 opt = OpticReader()
-LKS = LakeShore331('10.214.1.85')
-PRESSURE = PressureGauge('10.214.1.86')
+#LKS = LakeShore331('10.214.1.85')
+#PRESSURE = PressureGauge('10.214.1.86')
 
 DLG = DataLogger()
 
-DLG.add_channel('Pressure', PRESSURE.pressure)
+#DLG.add_channel('Pressure', PRESSURE.pressure)
 
 DLG.add_channel('3He RuO2', lambda : CRC.ch_a.temp)
 DLG.add_channel('1Kpot RuO2', lambda : CRC.ch_b.temp)
-DLG.add_channel('3He AB', lambda : LKS.temp("A"))
-DLG.add_channel('Sorb AB', lambda : LKS.temp("B"))
+#DLG.add_channel('3He AB', lambda : LKS.temp("A"))
+#DLG.add_channel('Sorb AB', lambda : LKS.temp("B"))
 
 
 HD = HeliumDepth('10.214.1.78')
