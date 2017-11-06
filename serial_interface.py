@@ -61,15 +61,24 @@ class SerialConnection(SerialInterface):
                     xonxoff=self.xonxoff, rtscts=self.rtscts,
                     dsrdtr=self.dsrdtr)
 
-    async def ask(self, val):
-        for retry in self.N_RETRIES:
+    async def write(self, val):
+        for retry in range(self.N_RETRIES):
             try:
                 with Serial(**self.conn_kwds) as ser:
-                    ser.write(val + self.linebreak)
-                    return ser.readline()
+                    ser.write((val + self.linebreak).encode())
+                    return
             except SerialException as e:
                 continue
-        print("Failed to connect after %i retries" % self.N_RETRIES)
+        raise ValueError("Failed to connect after %i retries" % self.N_RETRIES)
+
+    async def ask(self, val):
+        for retry in range(self.N_RETRIES):
+            try:
+                with Serial(**self.conn_kwds) as ser:
+                    ser.write((val + self.linebreak).encode())
+                    return ser.readline().decode().rstrip(self.linebreak)
+            except SerialException as e:
+                continue
         raise ValueError("Failed to connect after %i retries" % self.N_RETRIES)
 
 
@@ -84,6 +93,34 @@ class Wiznet(SerialInterface):
 
     def __init__(self, ip):
         self.ip = ip
+
+    async def write(self, val):
+        for retry in range(self.N_RETRIES):
+            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            conn.setblocking(0) # connect, send, and receive should return
+            # or fail immediately
+            try:
+                conn.connect((self.ip, self.PORT))
+            except BlockingIOError as e: # always fails to connect instantly
+                pass
+            await asyncio.sleep(self.CONNECT_DELAY) # (even with a succesful
+            # blocking connect, a delay seems to be needed by the wiznet
+            string = (val + self.linebreak).encode('utf-8')
+            try:
+                conn.send(string)
+                return
+            except OSError as e: # send failed because connection is not
+                # available
+                continue # continue with the retry loop
+            finally: # In any case, the connection should be closed
+                try:
+                    conn.shutdown(socket.SHUT_WR) # closes quickly
+                except OSError as e:  # socket already disconnected
+                    pass
+                finally:
+                    await asyncio.sleep(self.CLOSE_DELAY)
+                    conn.close()
+        raise ValueError("Failed to connect after %i retries"%self.N_RETRIES)
 
     async def ask(self, val):
         for retry in range(self.N_RETRIES):
@@ -101,7 +138,7 @@ class Wiznet(SerialInterface):
                 conn.send(string)
                 await asyncio.sleep(self.SEND_DELAY)
                 result = conn.recv(1024)
-                return result
+                return result.decode().rstrip(self.linebreak)
             except OSError as e: # send failed because connection is not
                 # available
                 continue # continue with the retry loop
@@ -113,7 +150,6 @@ class Wiznet(SerialInterface):
                 finally:
                     await asyncio.sleep(self.CLOSE_DELAY)
                     conn.close()
-        print("Failed to connect after %i retries"%self.N_RETRIES)
         raise ValueError("Failed to connect after %i retries"%self.N_RETRIES)
 
 
@@ -124,6 +160,6 @@ class SerialInstrument(object):
     ip_or_port (COM1--> SerialInterface, '10.214.1.85'--> Wiznet) is
     created. The remaining kwds are used for the SerialInterface constructor.
     """
-    def __init__(self, ip_or_port, **kwds):
+    def __init__(self, ip_or_port='COM1', **kwds):
         self.serial = serial_interface_factory(ip_or_port, **kwds)
 

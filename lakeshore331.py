@@ -11,3 +11,9 @@ class LakeShore331(SerialInstrument):
     async def temp(self, ch='A'):
         string = await self.serial.ask("KRDG? " + ch)
         return float(string)
+
+    async def temp_chA(self):
+        return await self.temp("A")
+
+    async def temp_chB(self):
+        return await self.temp("B")
