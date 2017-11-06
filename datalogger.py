@@ -7,10 +7,21 @@ import asyncio
 from asyncio import ensure_future
 import time
 import inspect
+from asyncio import Future, ensure_future, CancelledError, \
+    set_event_loop, TimeoutError
+import quamash
+import asyncio
+import sys
+
+from qtpy.QtWidgets import QApplication
 
 from .widgets import DataLoggerWidget
 
+from quamash import QEventLoop, QThreadExecutor
+#app = QApplication.instance()
+app = QApplication(sys.argv)
 
+set_event_loop(quamash.QEventLoop())
 
 class Channel(object):
     def __init__(self, parent, name):

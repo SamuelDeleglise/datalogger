@@ -6,13 +6,6 @@ from asyncio import Future, ensure_future, CancelledError, \
 import quamash
 import asyncio
 
-from qtpy.QtWidgets import QApplication
-
-from quamash import QEventLoop, QThreadExecutor
-#app = QApplication.instance()
-app = QApplication(sys.argv)
-
-set_event_loop(quamash.QEventLoop())
 
 
 def serial_interface_factory(ip_or_port, **kwds):
