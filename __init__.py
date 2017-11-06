@@ -1,1 +1,1 @@
-from .datalogger import DataLogger
+from .channels import DataLogger
