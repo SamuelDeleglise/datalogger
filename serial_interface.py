@@ -27,7 +27,7 @@ class SerialInterface(object):
     Asynchronous serial interface.
     Exposes an asynchronous coroutine "ask".
     """
-    N_RETRIES = 10
+    N_RETRIES = 1
     linebreak = '\n'
 
     async def ask(self, val):
@@ -87,8 +87,8 @@ class Wiznet(SerialInterface):
     a serial interface includes a function "ask"
     """
     CONNECT_DELAY = 0.1
-    SEND_DELAY = 0.1
-    CLOSE_DELAY = 0.1
+    #SEND_DELAY = 0.1
+    #CLOSE_DELAY = 0.1
     PORT = 5000
 
     def __init__(self, ip):
@@ -133,12 +133,19 @@ class Wiznet(SerialInterface):
                 pass
             await asyncio.sleep(self.CONNECT_DELAY) # (even with a succesful
             # blocking connect, a delay seems to be needed by the wiznet
+            try:
+                conn.recv(1024)  # Make sure the buffer is empty
+            except OSError as e:
+                pass
+            await asyncio.sleep(self.CONNECT_DELAY)
             string = (val + self.linebreak).encode('utf-8')
             try:
                 conn.send(string)
-                await asyncio.sleep(self.SEND_DELAY)
+                await asyncio.sleep(self.CONNECT_DELAY)
                 result = conn.recv(1024)
-                return result.decode().rstrip(self.linebreak)
+                result = result.decode()
+                assert result.endswith(self.linebreak) # to make sure all data have been received
+                return result.rstrip(self.linebreak)
             except OSError as e: # send failed because connection is not
                 # available
                 continue # continue with the retry loop
@@ -148,7 +155,7 @@ class Wiznet(SerialInterface):
                 except OSError as e:  # socket already disconnected
                     pass
                 finally:
-                    await asyncio.sleep(self.CLOSE_DELAY)
+                    await asyncio.sleep(self.CONNECT_DELAY)
                     conn.close()
         raise ValueError("Failed to connect after %i retries"%self.N_RETRIES)
 
@@ -160,6 +167,30 @@ class SerialInstrument(object):
     ip_or_port (COM1--> SerialInterface, '10.214.1.85'--> Wiznet) is
     created. The remaining kwds are used for the SerialInterface constructor.
     """
+    CONNECT_DELAY = 0.1
+    N_RETRIES = 10
+    baudrate = 9600
+    bytesize = 8
+    parity = 'O'
+    stopbits = 1
+    timeout = None
+    xonxoff = False
+    rtscts = False
+    dsrdtr = False
+    linebreak = '\n'
+
     def __init__(self, ip_or_port='COM1', **kwds):
         self.serial = serial_interface_factory(ip_or_port, **kwds)
+        self.serial.linebreak = self.linebreak
+        self.serial.CONNECT_DELAY = self.CONNECT_DELAY
+        self.serial.N_RETRIES = self.N_RETRIES
+        self.serial.parity = self.parity
+        self.serial.stopbits = self.stopbits
+        self.serial.baudrate = self.baudrate
+        self.serial.bytesize = self.bytesize
+        self.serial.dsrdtr = self.dsrdtr
+        self.serial.rtscts = self.rtscts
+        self.serial.timeout = self.timeout
+        self.serial.xonxoff = self.xonxoff
+
 
