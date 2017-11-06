@@ -4,6 +4,7 @@ import numpy as np
 import time
 import matplotlib.pylab as plt
 from .serial_interface import SerialInstrument
+import serial
 
 
 class HeliumDepth_old(object):
@@ -74,11 +75,14 @@ class HeliumDepth_old(object):
                 break
 
 class HeliumDepth(SerialInstrument):
+    linebreak = '\r\n'
+    timeout = 2
+    parity = serial.PARITY_NONE
+    stopbits = serial.STOPBITS_ONE
+    bytesize = 8
+    baudrate = 9600
 
     async def ask_level(self):
         string = await self.serial.ask("G")
         i = string.find('mm') - 4
-        try:
-            return int(string[i:i + 4])
-        except ValueError:
-            return 0
+        return int(string[i:i + 4])
