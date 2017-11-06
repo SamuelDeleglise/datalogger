@@ -159,10 +159,13 @@ class Channel(object):
 
     async def measure(self):
         while(self.active):
-            if inspect.iscoroutinefunction(self.callback_func):
-                val = await self.callback_func()
-            else:
-                val = self.callback_func()
+            try:
+                if inspect.iscoroutinefunction(self.callback_func):
+                    val = await self.callback_func()
+                else:
+                    val = self.callback_func()
+            except BaseException as e:
+                print(e)
             moment = time.time()
             self.plot_point(val, moment)
             await asyncio.sleep(self.delay)

@@ -6,6 +6,8 @@ from asyncio import Future, ensure_future, CancelledError, \
 import quamash
 import asyncio
 
+from serial import SerialException
+
 
 
 def serial_interface_factory(ip_or_port, **kwds):
@@ -25,11 +27,11 @@ class SerialInterface(object):
     Asynchronous serial interface.
     Exposes an asynchronous coroutine "ask".
     """
-    N_RETRIES = 3
+    N_RETRIES = 10
     linebreak = '\n'
 
     async def ask(self, val):
-        raise NotImpementedError("To implement in a derived class")
+        raise NotImplementedError("To implement in a derived class")
 
 
 class SerialConnection(SerialInterface):
@@ -62,10 +64,10 @@ class SerialConnection(SerialInterface):
     async def ask(self, val):
         for retry in self.N_RETRIES:
             try:
-                with Serial(**conn_kwds) as ser:
+                with Serial(**self.conn_kwds) as ser:
                     ser.write(val + self.linebreak)
                     return ser.readline()
-            except SerialError as e:
+            except SerialException as e:
                 continue
         print("Failed to connect after %i retries" % self.N_RETRIES)
         raise ValueError("Failed to connect after %i retries" % self.N_RETRIES)
