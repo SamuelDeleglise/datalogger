@@ -1,13 +1,15 @@
-from model import DataLogger
-from cryocon import CryoCon
-from helium_depth import HeliumDepth
-from lakeshore331 import LakeShore331
-from optic_reader import OpticReader
-from qtpy import QtWidgets
-from pressure_gauge import PressureGauge
-from redpitaya_channel import RedpitayaChannel
+from datalogger.model import DataLogger
+from datalogger.cryocon import CryoCon
+from datalogger.helium_depth import HeliumDepth
+from datalogger.lakeshore331 import LakeShore331
+from datalogger.optic_reader import OpticReader
+from datalogger.pressure_gauge import PressureGauge
+from datalogger.redpitaya_channel import RedpitayaChannel
+from datalogger.wiznet import SerialFromEthernet
+
 from pyrpl import Pyrpl
-from wiznet import SerialFromEthernet
+from qtpy import QtWidgets
+
 #s = SerialFromEthernet('10.214.1.78')
 
 

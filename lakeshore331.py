@@ -1,5 +1,5 @@
 from serial import Serial
-from wiznet import SerialFromEthernet
+from .wiznet import SerialFromEthernet
 import socket
 
 class LakeShore331(object):

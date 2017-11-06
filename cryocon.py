@@ -1,7 +1,7 @@
 from serial import Serial
 from io import StringIO
 import numpy as np
-from wiznet import SerialFromEthernet
+from .wiznet import SerialFromEthernet
 
 def curve_2_340(filename):
     with open(filename, 'r') as f:

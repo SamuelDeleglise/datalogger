@@ -1,5 +1,5 @@
 from serial import Serial
-from wiznet import  SerialFromEthernet
+from .wiznet import  SerialFromEthernet
 import numpy as np
 import time
 import matplotlib.pylab as plt

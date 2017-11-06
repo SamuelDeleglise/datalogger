@@ -119,14 +119,19 @@ class DataLogger(object):
         self.widget = None
         self._directory = None
         self.dialog = QtWidgets.QFileDialog
-        self.config_path = osp.join(os.environ["HOMEDRIVE"], os.environ[
-           "HOMEPATH"], '.datalogger','config.json')
+        self.config_dir = osp.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"], '.datalogger')
+        if not osp.exists(self.config_dir):
+            os.mkdir(self.config_dir)
+        self.config_path = osp.join(self.config_dir,'config.json')
         if not osp.exists(self.config_path):
             with open(self.config_path, 'w') as f:
                 json.dump("", f)
         with open(self.config_path, 'r') as f:
             dic = json.loads(f.read())
-        self._previous_directory = dic['directory']
+        if dic!="":
+            self._previous_directory = dic['directory']
+        else:
+            self._previous_directory = ""
         self.select_directory()
 
     @property
