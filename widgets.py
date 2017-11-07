@@ -2,11 +2,13 @@ from qtpy import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 import asyncio
 import time
+import numpy as np
 
 
 class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
     N_CHANNELS = 0
+
 
     def __init__(self, parent, channel):
         super(MyTreeWidgetItem, self).__init__(parent)
@@ -26,15 +28,24 @@ class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setBackground(0, QtGui.QColor(color))
         self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
         self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
+        self.curve.setVisible(channel.visible)
 
     def plot_point(self, val, moment):
         self.values.append(val)
         self.times.append(moment)
+
+        for index, moment in enumerate(self.times):
+            if moment<self.dlg.earliest_point:
+                self.values.pop(index)
+                self.times.pop(index)
+            else:
+                break
         self.curve.setData(self.times, self.values)
 
     def plot_points(self, vals, times):
-        self.values += [val for val in vals]
-        self.times += [time for time in times]
+        self.values = [val for val in vals]
+        self.times = [time for time in times]
+
         self.curve.setData(self.times, self.values)
 
     def show_error_state(self):
@@ -91,11 +102,38 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
             self.add_channel(ch, color)
     """
 
+class MyControlWidget(QtWidgets.QWidget):
+    def __init__(self, datalogger):
+        super(MyControlWidget, self).__init__()
+        self.dlg = datalogger
+        self.lay_v = QtWidgets.QVBoxLayout()
+        self.setLayout(self.lay_v)
+        self.lay_h = QtWidgets.QHBoxLayout()
+        self.lay_v.addLayout(self.lay_h)
+
+        self.label = QtWidgets.QLabel("# of days to display")
+        self.lay_h.addWidget(self.label)
+        self.spinbox = QtWidgets.QSpinBox()
+        self.lay_h.addWidget(self.spinbox)
+        self.lay_h.addStretch()
+
+        self.tree = MyTreeWidget(datalogger)
+        self.lay_v.addWidget(self.tree)
+        self.spinbox.setValue(self.dlg.days_to_show)
+
+        self.spinbox.valueChanged.connect(self.update_days_to_show)
+
+    def update_days_to_show(self):
+        days = self.spinbox.value()
+        self.dlg.days_to_show = days
+
 class MyDockTreeWidget(QtWidgets.QDockWidget):
     def __init__(self, datalogger):
         super(MyDockTreeWidget, self).__init__()
-        self.tree = MyTreeWidget(datalogger)
-        self.setWidget(self.tree)
+
+        self.mycontrolwidget = MyControlWidget(datalogger)
+        self.tree = self.mycontrolwidget.tree
+        self.setWidget(self.mycontrolwidget)
 
 
 class TimeAxisItem(pg.AxisItem):
@@ -124,6 +162,12 @@ class DataloggerMenu(QtWidgets.QMenuBar):
         self.action_new.triggered.connect(self.new_file)
         self.menufile.addAction(self.action_new)
         self.menufile.addAction(self.action_load)
+        '''
+        #modif Edouard
+        self.action_load_1_more_day = QtWidgets.QAction("Load 1 more day of data...", self)
+        self.action_load_1_more_day.triggered.connect(self.load_1_more_day)
+        self.menufile.addAction(self.action_load_1_more_day)
+        '''
 
     def new_file(self):
         accept, filename = self.dialog.getSaveFileName()
@@ -153,6 +197,5 @@ class DataLoggerWidget(QtWidgets.QMainWindow):
         self.show()
 
     def create_channel(self, channel):
-        self.current_channel_index +=1
         return self.tree.create_channel(channel)
 

@@ -14,6 +14,9 @@ import asyncio
 import sys
 import struct
 
+#modif Edouard
+import datetime
+
 from qtpy.QtWidgets import QApplication
 
 from .widgets import DataLoggerWidget
@@ -106,6 +109,7 @@ class Channel(object):
     @visible.setter
     def visible(self, val):
         self._visible = val
+        self.set_curve_visible(val)
         self.save_config()
 
     @property
@@ -154,6 +158,13 @@ class Channel(object):
             data = np.frombuffer(f.read(), dtype=float)
         times = data[::2]
         values = data[1::2]
+
+        #modif Edouard
+
+        values = values[times > self.parent.earliest_point]
+        times = times[times>self.parent.earliest_point]
+
+
         self.plot_points(values, times)
 
     @property
@@ -174,20 +185,35 @@ class Channel(object):
             await asyncio.sleep(self.delay)
 
     def plot_and_save_point(self, val, moment):
+        """
+        Appends a single point at the end of the curve, eventually, removes points that are too old from the curve,
+        and saves the val and moment in the channel file.
+        """
         with open(self.filename, 'ab') as f:
             f.write(struct.pack('d', moment))
             f.write(struct.pack('d', val))
+        self.parent.latest_point = moment
         self.widget.plot_point(val, moment)
 
     def plot_points(self, vals, times):
+        '''
+        Erases the current curve and replots all the requested data
+        '''
+
         self.widget.plot_points(vals, times)
+
+    def set_curve_visible(self, val):
+        #ignores the visibility toggle until the widget attr has been successfully loaded
+        if hasattr(self, 'widget'):
+            self.widget.curve.setVisible(val)
 
 class DataLogger(object):
     def __init__(self, directory=None):
         """
         If directory is None, uses the default home directory (+.datalogger)
         """
-
+        self._days_to_show = 0.01
+        self.latest_point = time.time()
         self.channels = dict()
         if directory is None:
             directory = osp.join(os.environ["HOMEDRIVE"], os.environ[
@@ -205,8 +231,37 @@ class DataLogger(object):
         self.script_locals = dict()
         self.run_start_script()
 
+        self.load_config()
         self.widget = DataLoggerWidget(self)
         self.load_channels()
+
+
+    @property
+    def days_to_show(self):
+        return self._days_to_show
+
+    @days_to_show.setter
+    def days_to_show(self, val):
+        self._days_to_show = val
+        self.save_config()
+        for ch in self.channels.values():
+            ch.load_data()
+
+    def save_config(self):
+        config = self.get_config_from_file()
+        config["days_to_show"] = self.days_to_show
+        self.write_config_to_file(config)
+
+    def load_config(self):
+        config = self.get_config_from_file()
+        if "days_to_show" in config:
+            self.days_to_show = config["days_to_show"]
+
+    @property
+    def earliest_point(self):
+        earliest_point = self.latest_point - 24*3600*self.days_to_show#datetime.timedelta(days=self.parent.days_to_load)
+        #earliest_point = time.mktime(loadstart_date.timetuple())
+        return earliest_point
 
     def run_start_script(self):
         self.script_locals = dict()
