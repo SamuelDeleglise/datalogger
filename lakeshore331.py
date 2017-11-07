@@ -1,36 +1,21 @@
 from serial import Serial
 from .wiznet import SerialFromEthernet
+
+from .serial_interface import SerialInstrument
+
 import socket
 
-class LakeShore331(object):
-    def __init__(self, port="COM1"):
-        if port.find("COM")>=0:
-            self.serial = Serial(port)
-            self.serial.parity = 'O'
-            self.serial.bytesize = 7
-        else:
-            self.serial = SerialFromEthernet(port)
+class LakeShore331(SerialInstrument):
+    parity = 'O'
+    bytesize = 7
+    linebreak = '\r\n'
 
-    def write(self, val):
-        self.serial.write(val + '\r\n')
+    async def temp(self, ch='A'):
+        string = await self.serial.ask("KRDG? " + ch)
+        return float(string)
 
-    def readline(self):
-        st = b''
-        ch = b''
-        while (ch != b'\r'):
-            try:
-                ch = self.serial.socket.recv(1)
-                st += ch
-            except socket.error :
-                return st
-        return st
+    async def temp_chA(self):
+        return await self.temp("A")
 
-    def ask(self, val):
-        self.write(val)
-        return self.readline()
-
-    def temp(self, ch='A'):
-        try:
-            return float(self.ask("KRDG? " + ch).decode('utf-8'))
-        except ValueError:
-            return 0
+    async def temp_chB(self):
+        return await self.temp("B")

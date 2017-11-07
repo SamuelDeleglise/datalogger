@@ -1,7 +1,11 @@
 from serial import Serial
+import serial
 from io import StringIO
 import numpy as np
-from .wiznet import SerialFromEthernet
+
+from wiznet import SerialFromEthernet
+from .serial_interface import SerialInstrument
+
 
 def curve_2_340(filename):
     with open(filename, 'r') as f:
@@ -32,7 +36,7 @@ def curve_2_340(filename):
 
 
 
-class CryoConChannel(object):
+class CryoConChannel_old(object):
     def __init__(self, parent, name):
         self.parent = parent
         self.name = name
@@ -59,7 +63,7 @@ class CryoConChannel(object):
             return 0.
 
 
-class CryoCon(object):
+class CryoCon_old(object):
     def __init__(self, port='COM1'):
         if port.find("COM")>=0:
             self.serial = Serial(port)
@@ -126,3 +130,43 @@ class CryoCon(object):
     def set_curve_from_file(self, index, filename):
         name, ser_num, coeff, df, curve = self.curve_from_file(filename)
         self.set_curve(index, name, 'ACR', coeff, 'LogOhm', curve)
+
+class CryoCon(SerialInstrument):
+
+    def __init__(self, ip_or_port, **kwds):
+        super(CryoCon, self).__init__()
+        self.serial.linebreak='\n\r'
+        self.serial.timeout = 2
+        self.serial.parity = serial.PARITY_NONE
+        self.serial.stopbits = serial.STOPBITS_ONE
+        self.serial.bytesize = 8
+        self.serial.baudrate = 9600
+
+
+
+    async def temp(self, ch='A'):
+        string = await self.serial.ask("INPUT %s:TEMPER?"%ch)
+        return float(string)
+
+    async def temp_chA(self):
+        return await self.temp("A")
+
+    async def temp_chB(self):
+        return await self.temp("B")
+
+    async def idn(self):
+        string = await self.serial.ask('*IDN?')
+        return string
+
+    async def get_control(self):
+        return await self.serial.ask("CONTROL?")
+
+    async def set_control(self, val):
+        if val:
+            await self.serial.write("CONTROL ON")
+        else:
+            self.stop_control()
+
+    async def stop_control(self):
+        await self.serial.write("STOP")
+
