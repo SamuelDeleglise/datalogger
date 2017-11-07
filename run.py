@@ -5,10 +5,13 @@ dir_path = osp.split(osp.dirname(osp.realpath(__file__)))[0]
 sys.path.append(dir_path) # In case datalogger not
 # accessible in normal PYTHONPATH
 
-APP = QtWidgets.QApplication(sys.argv)
+if __name__=='__main__':
+    directory = sys.argv[1]
 
-from datalogger import DataLogger
+    APP = QtWidgets.QApplication(sys.argv)
 
-DLG = DataLogger()
+    from datalogger import DataLogger
 
-APP.exec_()
+    DLG = DataLogger(directory)
+
+    APP.exec_()
