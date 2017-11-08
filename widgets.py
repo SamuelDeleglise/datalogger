@@ -5,18 +5,14 @@ import time
 import numpy as np
 
 
-class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
-    COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
-    N_CHANNELS = 0
-
-
+class MyTreeItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, parent, channel):
         super(MyTreeWidgetItem, self).__init__(parent)
         self.times = []
         self.values = []
         self.channel = channel
         color = self.COLORS[self.N_CHANNELS % len(self.COLORS)]
-        MyTreeWidgetItem.N_CHANNELS+=1
+        MyTreeWidgetItem.N_CHANNELS += 1
         self.dlg = parent.dlg
         self.setText(0, channel.name)
         for index, val in enumerate(channel.args):
@@ -29,6 +25,10 @@ class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
         self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
         self.curve.setVisible(channel.visible)
+
+class PlotterItem(MyTreeItem):
+    COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
+    N_CHANNELS = 0
 
     def plot_point(self, val, moment):
         self.values.append(val)
@@ -48,11 +48,28 @@ class MyTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
         self.curve.setData(self.times, self.values)
 
+class LoggerItem(MyTreeItem):
     def show_error_state(self):
         color = 'red' if self.channel.error_state else 'green'
         self.setBackground(4, QtGui.QColor(color))
 
+
 class MyTreeWidget(QtWidgets.QTreeWidget):
+    item_class = None
+
+    def create_channel(self, channel):
+        self.blockSignals(True)
+        widget = self.item_class(self, channel)  # QtWidgets.QTreeWidgetItem(
+        # self)
+        self.addTopLevelItem(widget)
+        self.blockSignals(False)
+        return widget
+
+
+class PlotterTree(MyTreeWidget):
+    pass
+
+class LoggerTree(MyTreeWidget):
     def __init__(self, datalogger):
         super(MyTreeWidget, self).__init__()
         self.setHeaderLabels(["Channel", "Visible", "Active",
@@ -70,14 +87,6 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
             channel.delay = float(channel.widget.text(3))
             channel.callback = str(channel.widget.text(4))
             channel.widget.show_error_state()
-
-    def create_channel(self, channel):
-        self.blockSignals(True)
-        widget = MyTreeWidgetItem(self, channel)#QtWidgets.QTreeWidgetItem(
-        # self)
-        self.addTopLevelItem(widget)
-        self.blockSignals(False)
-        return widget
 
     def contextMenuEvent(self, evt):
         menu = QtWidgets.QMenu()
@@ -199,3 +208,5 @@ class DataLoggerWidget(QtWidgets.QMainWindow):
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
 
+class DataPlotterWidget(QtWidgets.QMainWindow):
+    def __init__(self, datalogger):

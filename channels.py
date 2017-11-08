@@ -27,7 +27,16 @@ app = QApplication(sys.argv)
 
 set_event_loop(quamash.QEventLoop())
 
-class Channel(object):
+
+class ChannelBase(object):
+    pass
+
+
+class ChannelPlotter(ChannelBase):
+    pass
+
+
+class ChannelLogger(ChannelBase):
     def __init__(self, parent, name):
         self._name = name
         self.parent = parent
@@ -207,7 +216,32 @@ class Channel(object):
         if hasattr(self, 'widget'):
             self.widget.curve.setVisible(val)
 
-class DataLogger(object):
+class BaseModule(object):
+    """
+    Base module for Datalogger and DataPlotter
+    """
+    def __init__(self, directory=None):
+        """
+        If directory is None, uses the default home directory (+.datalogger)
+        """
+        pass
+
+    def get_config_from_file(self):
+        if not osp.exists(self.config_file):
+            return dict()
+        with open(self.config_file, 'r') as f:
+            return json.load(f)
+
+    def write_config_to_file(self, config_dict):
+        with open(self.config_file, 'w') as f:
+            json.dump(config_dict, f)
+
+class DataPlotter(BaseModule):
+    channel_class = ChannelPlotter
+
+class DataLogger(BaseModule):
+    channel_class = ChannelLogger
+
     def __init__(self, directory=None):
         """
         If directory is None, uses the default home directory (+.datalogger)
@@ -269,7 +303,6 @@ class DataLogger(object):
         with open(self.script_file, 'r') as f:
             exec(f.read(), self.script_globals, self.script_locals)
 
-
     def load_channels(self):
         config = self.get_config_from_file()
         if 'channels' in config:
@@ -281,7 +314,7 @@ class DataLogger(object):
 
     def new_channel(self):
         name = self.get_unique_ch_name()
-        self.channels[name] = Channel(self, name)
+        self.channels[name] = self.channel_class(self, name)
 
     def get_unique_ch_name(self):
         name = 'new_channel'
@@ -299,12 +332,7 @@ class DataLogger(object):
     def script_file(self):
         return osp.join(self.directory, 'start_script.py')
 
-    def get_config_from_file(self):
-        if not osp.exists(self.config_file):
-            return dict()
-        with open(self.config_file, 'r') as f:
-            return json.load(f)
-
-    def write_config_to_file(self, config_dict):
-        with open(self.config_file, 'w') as f:
-            json.dump(config_dict, f)
+#from qtpy import QtWidgets, QtCore
+#w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
+#w = QtCore.QFileSystemWatcher("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
+#w.fileChanged.connect(lambda:print("coucou"))
