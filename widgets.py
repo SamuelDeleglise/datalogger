@@ -210,3 +210,4 @@ class DataLoggerWidget(QtWidgets.QMainWindow):
 
 class DataPlotterWidget(QtWidgets.QMainWindow):
     def __init__(self, datalogger):
+        pass
