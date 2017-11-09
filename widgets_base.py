@@ -4,7 +4,6 @@ import asyncio
 import time
 import numpy as np
 
-
 class MyTreeItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, parent, channel):
         super(MyTreeWidgetItem, self).__init__(parent)
@@ -26,10 +25,6 @@ class MyTreeItem(QtWidgets.QTreeWidgetItem):
         self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
         self.curve.setVisible(channel.visible)
 
-class BaseItem(object):
-    pass
-
-
 class MyTreeWidget(QtWidgets.QTreeWidget):
     item_class = None
 
@@ -40,10 +35,6 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
         self.addTopLevelItem(widget)
         self.blockSignals(False)
         return widget
-
-class BaseTree(MyTreeWidget):
-    pass
-
 
 class MyControlWidget(QtWidgets.QWidget):
     def __init__(self, datalogger):
@@ -78,7 +69,6 @@ class MyDockTreeWidget(QtWidgets.QDockWidget):
         self.tree = self.mycontrolwidget.tree
         self.setWidget(self.mycontrolwidget)
 
-
 class TimeAxisItem(pg.AxisItem):
     def __init__(self, *args, **kwargs):
         super(TimeAxisItem, self).__init__(*args, **kwargs)
@@ -91,57 +81,3 @@ class TimeAxisItem(pg.AxisItem):
                 value in
                 values]
 
-
-class DataloggerMenu(QtWidgets.QMenuBar):
-    def __init__(self, datalogger):
-        super(DataloggerMenu, self).__init__()
-        self.menufile = QtWidgets.QMenu("File")
-        self.addMenu(self.menufile)
-
-        self.action_load = QtWidgets.QAction("Load...", self)
-        self.action_new = QtWidgets.QAction("New file...", self)
-        self.dlg = datalogger
-        self.action_load.triggered.connect(self.load)
-        self.action_new.triggered.connect(self.new_file)
-        self.menufile.addAction(self.action_new)
-        self.menufile.addAction(self.action_load)
-        '''
-        #modif Edouard
-        self.action_load_1_more_day = QtWidgets.QAction("Load 1 more day of data...", self)
-        self.action_load_1_more_day.triggered.connect(self.load_1_more_day)
-        self.menufile.addAction(self.action_load_1_more_day)
-        '''
-
-    def new_file(self):
-        accept, filename = self.dialog.getSaveFileName()
-        if accept:
-            self.logfile = filename
-
-    def load(self):
-        self.datalogger.load()
-
-
-class DataLoggerWidget(QtWidgets.QMainWindow):
-    def __init__(self, datalogger):
-        super(DataLoggerWidget, self).__init__()
-        self.current_channel_index = -1
-        self.dlg = datalogger
-        self.graph = pg.GraphicsWindow(title="temperatures")
-        self.plot_item = self.graph.addPlot(title="temperatures", axisItems={
-            'bottom': TimeAxisItem(orientation='bottom')})
-        self.plot_item.showGrid(y=True, alpha=1.)
-        self.setCentralWidget(self.graph)
-
-        self._dock_tree = MyDockTreeWidget(datalogger)
-        self.tree = self._dock_tree.tree
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._dock_tree)
-        self.menubar = DataloggerMenu(datalogger)
-        self.setMenuBar(self.menubar)
-        self.show()
-
-    def create_channel(self, channel):
-        return self.tree.create_channel(channel)
-
-class DataPlotterWidget(QtWidgets.QMainWindow):
-    def __init__(self, datalogger):
-        pass

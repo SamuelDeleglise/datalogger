@@ -3,8 +3,9 @@ import pyqtgraph as pg
 import asyncio
 import time
 import numpy as np
+import .widgets_base as wb
 
-class PlotterItem(MyTreeItem):
+class PlotterItem(wb.MyTreeItem):
     COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
     N_CHANNELS = 0
 
@@ -26,7 +27,28 @@ class PlotterItem(MyTreeItem):
 
         self.curve.setData(self.times, self.values)
 
+class PlotterTree(wb.MyTreeWidget):
+    def __init__(self):
+        super(wb.MyTreeWidget, self).__init__()
+        self.setHeaderLabels(["Channel", "Visible"])
 
-class PlotterTree(MyTreeWidget):
-    pass
+        self.itemChanged.connect(self.update)
 
+    def update(self):
+        for channel in self.dlg.channels.values():
+            channel.visible = channel.widget.checkState(1) == 2
+
+class DataPlotterWidget(QtWidgets.QMainWindow):
+    def __init__(self, datalogger):
+        self.dlg = datalogger
+        self.graph = pg.GraphicsWindow(title="DataLogger")
+        self.plot_item = self.graph.addPlot(title="DataLogger", axisItems={
+            'bottom': wb.TimeAxisItem(orientation='bottom')})
+        self.plot_item.showGrid(y=True, alpha=1.)
+        self.setCentralWidget(self.graph)
+
+        self._dock_tree = wb.MyDockTreeWidget(datalogger)
+        self.tree = self._dock_tree.tree
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._dock_tree)
+
+        self.show()
