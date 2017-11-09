@@ -13,18 +13,15 @@ import quamash
 import asyncio
 import sys
 import struct
-
-#modif Edouard
+from qtpy.QtWidgets import QApplication
 import datetime
 from qtpy import QtCore
-
-from qtpy.QtWidgets import QApplication
 
 from .widgets_base import DataLoggerWidget
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
-app = QApplication(sys.argv)
+APP = QApplication(sys.argv)
 
 
 LOOP = quamash.QEventLoop()
@@ -33,17 +30,10 @@ set_event_loop(LOOP)
 
 def sleep_with_loop(interval):
     #while(not f.done()):
-    LOOP.run_until_complete(asyncio.sleep(interval))
+    f = ensure_future(asyncio.sleep(interval))
+    while not f.done():
+        APP.processEvents()
 
-    """
-    loop = quamash.QEventLoop()
-    timer = QtCore.QTimer()
-    timer.setSingleShot(True)
-    timer.setInterval(interval*0.001)
-    timer.timeout.connect(loop.stop)
-    timer.start()
-    loop.exec_()
-    """
 
 class ChannelBase(object):
 
