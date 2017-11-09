@@ -19,7 +19,7 @@ import datetime
 
 from qtpy.QtWidgets import QApplication
 
-from .widgets import DataPlotterWidget
+from .widgets_base import DataPlotterWidget
 from .channel_base import ChannelBase, BaseModule
 
 from quamash import QEventLoop, QThreadExecutor
@@ -31,7 +31,6 @@ set_event_loop(quamash.QEventLoop())
 class ChannelPlotter(ChannelBase):
 
     def initialize(self):
-        self.name = name
         self._visible = True
 
     def plot_points(self, vals, times):
@@ -45,6 +44,10 @@ class ChannelPlotter(ChannelBase):
         # ignores the visibility toggle until the widget attr has been successfully loaded
         if hasattr(self, 'widget'):
             self.widget.curve.setVisible(val)
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def visible(self):
@@ -83,7 +86,7 @@ class DataPlotter(BaseModule):
         self.config_file = configfilename
         self.show_real_time = False
         self.channel_name_source = self.load_a_channel
-        self._days_to_show = 0.01
+        self._days_to_show = 1
 
     def prepare_path(self, path):
         assert osp.exists(path)
@@ -105,6 +108,16 @@ class DataPlotter(BaseModule):
         latest_point = self.earliest_point + 24*3600*self.days_to_show#datetime.timedelta(days=self.parent.days_to_load)
         #earliest_point = time.mktime(loadstart_date.timetuple())
         return latest_point
+
+    def save_config(self):
+        config = self.get_config_from_file()
+        # config["days_to_show"] = self.days_to_show
+        self.write_config_to_file(config)
+
+    def load_config(self):
+        config = self.get_config_from_file()
+        if "days_to_show" in config:
+            self.days_to_show = config["days_to_show"]
 
 # from qtpy import QtWidgets, QtCore
 # w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")

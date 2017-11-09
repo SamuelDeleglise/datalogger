@@ -20,7 +20,7 @@ import datetime
 from qtpy.QtWidgets import QApplication
 from .channel_base import ChannelBase, BaseModule
 
-from .widgets import DataLoggerWidget
+from .widgets_base import DataLoggerWidget
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
@@ -31,7 +31,6 @@ set_event_loop(quamash.QEventLoop())
 class ChannelLogger(ChannelBase):
 
     def initialize(self):
-        self._name = name
 
         self.error_state = True  # no callback defined at the beginnning
         self.callback_func = None
@@ -164,10 +163,10 @@ class DataLogger(BaseModule):
 
     def prepare_path(self, path):
         self.directory = path
-        if directory is None:
-            directory = osp.join(os.environ["HOMEDRIVE"], os.environ[
+        if path is None:
+            path = osp.join(os.environ["HOMEDRIVE"], os.environ[
                 "HOMEPATH"], '.datalogger')
-        self.directory = directory
+        self.directory = path
         if not osp.exists(self.directory):
             os.mkdir(self.directory)
 
@@ -178,13 +177,13 @@ class DataLogger(BaseModule):
 
     def save_config(self):
         config = self.get_config_from_file()
-        config["days_to_show"] = self.days_to_show
+        #config["days_to_show"] = self.days_to_show
         self.write_config_to_file(config)
 
     def load_config(self):
         config = self.get_config_from_file()
-        if "days_to_show" in config:
-            self.days_to_show = config["days_to_show"]
+        #if "days_to_show" in config:
+       #     self.days_to_show = config["days_to_show"]
 
     def run_start_script(self):
         self.script_locals = dict()
@@ -195,6 +194,7 @@ class DataLogger(BaseModule):
     def new_channel(self):
         name = self.get_unique_ch_name()
         self.channels[name] = ChannelLogger(self, name)
+        return self.channels[name]
 
     def get_unique_ch_name(self):
         name = 'new_channel'
@@ -208,7 +208,7 @@ class DataLogger(BaseModule):
         config = self.get_config_from_file()
         if 'channels' in config:
             for name in config['channels'].keys():
-                self.channels[name] = Channel(self, name)
+                self.channels[name] = ChannelLogger(self, name)
         else:
             config['channels'] = dict()
             self.write_config_to_file(config)

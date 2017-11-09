@@ -16,25 +16,43 @@ import struct
 
 #modif Edouard
 import datetime
+from qtpy import QtCore
 
 from qtpy.QtWidgets import QApplication
-from .channel_base import ChannelBase, BaseModule
 
-from .widgets import DataLoggerWidget
+from .widgets_base import DataLoggerWidget
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
 app = QApplication(sys.argv)
 
-set_event_loop(quamash.QEventLoop())
+
+LOOP = quamash.QEventLoop()
+set_event_loop(LOOP)
+
+
+def sleep_with_loop(interval):
+    #while(not f.done()):
+    LOOP.run_until_complete(asyncio.sleep(interval))
+
+    """
+    loop = quamash.QEventLoop()
+    timer = QtCore.QTimer()
+    timer.setSingleShot(True)
+    timer.setInterval(interval*0.001)
+    timer.timeout.connect(loop.stop)
+    timer.start()
+    loop.exec_()
+    """
 
 class ChannelBase(object):
 
-    def __init__(self):
+    def __init__(self, parent, name):
+        self._name = name
         self.parent = parent
 
         self.initialize()
-        self.widget = self.create_widget()
+       # self.widget = self.create_widget()
 
     def create_widget(self):
         return self.parent.widget.create_channel(self)
