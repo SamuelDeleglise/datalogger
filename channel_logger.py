@@ -30,6 +30,9 @@ set_event_loop(quamash.QEventLoop())
 
 class ChannelLogger(ChannelBase):
 
+    def initialize_attributes(self):
+        pass
+
     def initialize(self):
 
         self.error_state = True  # no callback defined at the beginnning
@@ -183,8 +186,6 @@ class DataLogger(BaseModule):
 
     def load_config(self):
         config = self.get_config_from_file()
-        #if "days_to_show" in config:
-       #     self.days_to_show = config["days_to_show"]
 
     def run_start_script(self):
         self.script_locals = dict()

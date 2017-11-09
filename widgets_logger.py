@@ -5,35 +5,36 @@ import time
 import numpy as np
 from . import widgets_base as wb
 
+
 class DataLoggerWidget(QtWidgets.QMainWindow):
     def __init__(self, datalogger):
         super(DataLoggerWidget, self).__init__()
         self.current_channel_index = -1
-        """
         self.dlg = datalogger
-        self.graph = pg.GraphicsWindow(title="DataLogger")
-        self.plot_item = self.graph.addPlot(title="DataLogger", axisItems={
-            'bottom': TimeAxisItem(orientation='bottom')})
-        self.plot_item.showGrid(y=True, alpha=1.)
-        self.setCentralWidget(self.graph)
-        """
 
-        self._dock_tree = wb.MyDockTreeWidget(datalogger)
-        self.tree = self._dock_tree.tree
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._dock_tree)
-        self.menubar = DataloggerMenu(datalogger)
+        self.tree = LoggerTree(self.dlg)
+        self.setCentralWidget(self.tree)
+
+        self.menubar = DataLoggerMenu(datalogger)
         self.setMenuBar(self.menubar)
+
         self.show()
 
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
 
+
 class LoggerItem(wb.MyTreeItem):
+    def initialize(self, channel):
+        self.show_error_state()
+
     def show_error_state(self):
         color = 'red' if self.channel.error_state else 'green'
         self.setBackground(4, QtGui.QColor(color))
 
+
 class LoggerTree(wb.MyTreeWidget):
+    item_class = LoggerItem
     def __init__(self, datalogger):
         super(wb.MyTreeWidget, self).__init__()
         self.setHeaderLabels(["Channel", "Active",
@@ -65,19 +66,10 @@ class LoggerTree(wb.MyTreeWidget):
         menu.addAction(action_rerun)
         menu.exec(evt.globalPos())
 
-    """
-    def add_channels(self):
-        return
-        colors = ['red', 'green', 'blue', 'cyan', 'magenta']
-        for index, ch in enumerate(
-                self.dataloggergui.datalogger.channels.keys()):
-            color = colors[index % len(colors)]
-            self.add_channel(ch, color)
-    """
 
-class DataloggerMenu(QtWidgets.QMenuBar):
+class DataLoggerMenu(QtWidgets.QMenuBar):
     def __init__(self, datalogger):
-        super(DataloggerMenu, self).__init__()
+        super(DataLoggerMenu, self).__init__()
         self.menufile = QtWidgets.QMenu("File")
         self.addMenu(self.menufile)
 
@@ -88,12 +80,6 @@ class DataloggerMenu(QtWidgets.QMenuBar):
         self.action_new.triggered.connect(self.new_file)
         self.menufile.addAction(self.action_new)
         self.menufile.addAction(self.action_load)
-        '''
-        #modif Edouard
-        self.action_load_1_more_day = QtWidgets.QAction("Load 1 more day of data...", self)
-        self.action_load_1_more_day.triggered.connect(self.load_1_more_day)
-        self.menufile.addAction(self.action_load_1_more_day)
-        '''
 
     def new_file(self):
         accept, filename = self.dialog.getSaveFileName()

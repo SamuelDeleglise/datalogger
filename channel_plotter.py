@@ -30,8 +30,12 @@ set_event_loop(quamash.QEventLoop())
 
 class ChannelPlotter(ChannelBase):
 
-    def initialize(self):
+    def initialize_attributes(self):
         self._visible = True
+        self._name = ""
+
+    def initialize(self):
+        self.load_data()
 
     def plot_points(self, vals, times):
         '''
@@ -46,8 +50,26 @@ class ChannelPlotter(ChannelBase):
             self.widget.curve.setVisible(val)
 
     @property
+    def directory(self):
+        return self.parent.directory
+
+    @property
+    def filename(self):
+        return osp.join(self.directory, self.name + '.chan')
+
+    @property
     def name(self):
         return self._name
+
+    @name.setter #initialises the filename for the corresponding channel if one has been sucessfully loaded
+    def name(self, val):
+        #os.rename(self.filename, osp.join(self.parent.directory, val + '.chan'))
+
+        config = self.parent.get_config_from_file()
+        config['channels'][val] = config['channels'][self._name]
+        self.parent.write_config_to_file(config)
+
+        self._name = val
 
     @property
     def visible(self):
@@ -61,7 +83,7 @@ class ChannelPlotter(ChannelBase):
 
     @property
     def args(self):
-        return self.visible
+        return [self.visible]
 
     @args.setter
     def args(self, val):
@@ -71,11 +93,13 @@ class ChannelPlotter(ChannelBase):
         """Load data from file"""
         with open(self.filename, 'rb') as f:
             data = np.frombuffer(f.read(), dtype=float)
-        times = data[::2]
-        values = data[1::2]
+        self.times = data[::2]
+        self.values = data[1::2]
+        self.plot_data()
 
-        values = values[times > self.parent.earliest_point]
-        times = times[times > self.parent.earliest_point]
+    def plot_data(self):
+        values = self.values[(self.times > self.parent.earliest_point)*(self.times < self.parent.latest_point)]
+        times = self.times[(self.times > self.parent.earliest_point) * (self.times < self.parent.latest_point)]
 
         self.plot_points(values, times)
 
@@ -83,14 +107,17 @@ class DataPlotter(BaseModule):
     widget_type = DataPlotterWidget
 
     def initialize(self):
-        self.config_file = configfilename
-        self.show_real_time = False
-        self.channel_name_source = self.load_a_channel
         self._days_to_show = 1
+        self.latest_point_selected = time.time()
+        self._show_real_time = False
+        self.channel_name_source = self.load_a_channel
+
 
     def prepare_path(self, path):
-        assert osp.exists(path)
-        self.config_file = path
+        if osp.isdir(path): # use the default config_file path/dataplotter.conf
+            self.config_file = osp.join(path, 'dataplotter.conf')
+        else:
+            self.config_file = path
 
     @property
     def days_to_show(self):
@@ -104,14 +131,23 @@ class DataPlotter(BaseModule):
             ch.load_data()
 
     @property
+    def show_real_time(self):
+        return self._show_real_time
+
+    @show_real_time.setter
+    def show_real_time(self, val):
+        self._show_real_time = val
+
+
+    @property
     def latest_point(self):
-        latest_point = self.earliest_point + 24*3600*self.days_to_show#datetime.timedelta(days=self.parent.days_to_load)
-        #earliest_point = time.mktime(loadstart_date.timetuple())
-        return latest_point
+        if self.show_real_time:
+            return time.time()
+        else:
+            return self.latest_point_selected
 
     def save_config(self):
         config = self.get_config_from_file()
-        # config["days_to_show"] = self.days_to_show
         self.write_config_to_file(config)
 
     def load_config(self):
@@ -119,6 +155,29 @@ class DataPlotter(BaseModule):
         if "days_to_show" in config:
             self.days_to_show = config["days_to_show"]
 
+    def load_channels(self):
+        '''
+        config = self.get_config_from_file()
+        if 'channels' in config:
+            for name in config['channels'].keys():
+                self.channels[name] = ChannelPlotter(self, name)
+        else:
+            config['channels'] = dict()
+            self.write_config_to_file(config)
+        '''
+        for val in os.listdir(osp.dirname(self.config_file)):
+            if val.endswith('.chan'):
+                name = val.rstrip('.chan')
+                self.channels[name] = ChannelPlotter(self, name)
+                #self.channels[name].name = name
+
+    @property
+    def directory(self):
+        return osp.dirname(self.config_file)
+
+    @property
+    def earliest_point(self):
+        return self.latest_point - 24*3600*self.days_to_show
 # from qtpy import QtWidgets, QtCore
 # w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
 # w = QtCore.QFileSystemWatcher("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")

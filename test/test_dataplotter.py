@@ -5,14 +5,14 @@ import time
 import numpy as np
 from ..channel_base import sleep_with_loop
 
-from datalogger.channel_logger import DataLogger
+from datalogger.channel_plotter import DataPlotter
 
 class TestBase(object):
     def setUp(self):
         self.dir = osp.join(osp.dirname(__file__), "test_data")
         if not osp.exists(self.dir):
             os.mkdir(self.dir)
-        self.dlg = DataLogger(self.dir)
+        self.dlg = DataPlotter(self.dir)
         print("Setting up (Base)")
 
     def tearDown(self):
@@ -20,20 +20,18 @@ class TestBase(object):
         print("Tearing down (base)")
 
 
-class TestDataLogger(TestBase):
+class TestDataPlotter(TestBase):
 
-    def test_create_datalogger(self):
+    def test_create_dataplotter(self):
         #self.dlg = DataLogger() # This should be open in a special "sandbox" directory
         pass
 
-    def test_new_channel(self):
-        self.dlg.new_channel()
-
     def test_configs(self):
+        #self.dlg = DataLogger()
         self.dlg.load_config()
         self.dlg.save_config()
 
-
+'''
 class TestChannels(TestBase):
 
     def setUp(self):
@@ -58,3 +56,4 @@ class TestChannels(TestBase):
         values = data[1::2]
 
         assert(len(times)==len(values) and len(times)>0)
+'''

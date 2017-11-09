@@ -39,9 +39,12 @@ class ChannelBase(object):
     def __init__(self, parent, name):
         self._name = name
         self.parent = parent
-
+        self.initialize_attributes()
+        self.widget = self.create_widget()
         self.initialize()
-       # self.widget = self.create_widget()
+
+    def intialize_attributes(self):
+        pass
 
     def create_widget(self):
         return self.parent.widget.create_channel(self)
@@ -70,8 +73,10 @@ class BaseModule(object):
         self.prepare_path(path)
         self.initialize()
         self.load_config()
-        #self.widget = self.widget_type(self)
+        self.widget = self.widget_type(self)
         self.load_channels()
+
+
 
     def get_config_from_file(self):
         if not osp.exists(self.config_file):
