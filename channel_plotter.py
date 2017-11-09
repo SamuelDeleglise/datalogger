@@ -153,7 +153,6 @@ class DataPlotter(BaseModule):
         for val in os.listdir(osp.dirname(self.config_file)):
             if val.endswith('.chan'):
                 name = val.rstrip('.chan')
-                print(name)
                 self.channels[name] = ChannelPlotter(self, name)
 
     @property
