@@ -37,6 +37,8 @@ class PlotterItem(wb.MyTreeItem):
         self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
         self.curve.setVisible(channel.visible)
 
+        self.plot_points(self.channel.values, self.channel.times)
+
     def plot_point(self, val, moment):
         self.values.append(val)
         self.times.append(moment)

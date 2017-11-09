@@ -9,8 +9,8 @@ class MyTreeItem(QtWidgets.QTreeWidgetItem):
     N_CHANNELS = 0
     def __init__(self, parent, channel):
         super(MyTreeItem, self).__init__(parent)
-        self.times = []
-        self.values = []
+        #self.times = []
+        #self.values = []
         self.channel = channel
 
         MyTreeItem.N_CHANNELS += 1

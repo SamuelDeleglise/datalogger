@@ -30,17 +30,12 @@ set_event_loop(quamash.QEventLoop())
 
 class ChannelLogger(ChannelBase):
 
-    def initialize_attributes(self):
-        pass
-
-    def initialize(self):
-
+    def initialize_attributes(self, name):
         self.error_state = True  # no callback defined at the beginnning
         self.callback_func = None
         self._active = False
         self._delay = 5
         self.callback = "random_coroutine"
-
 
         config = self.parent.get_config_from_file()
         if self.name in config["channels"]:

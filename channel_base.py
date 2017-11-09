@@ -39,9 +39,8 @@ class ChannelBase(object):
     def __init__(self, parent, name):
         self._name = name
         self.parent = parent
-        self.initialize_attributes()
+        self.initialize_attributes(name)
         self.widget = self.create_widget()
-        self.initialize()
 
     def intialize_attributes(self):
         pass
