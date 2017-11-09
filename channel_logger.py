@@ -14,7 +14,6 @@ import asyncio
 import sys
 import struct
 
-
 #modif Edouard
 import datetime
 
@@ -33,22 +32,18 @@ class ChannelLogger(ChannelBase):
 
     def initialize(self):
         self._name = name
-        self.parent = parent
+
         self.error_state = True  # no callback defined at the beginnning
-
         self.callback_func = None
-
         self._callback = "random_coroutine"
         self._active = False
         self._delay = 5
-
 
         config = self.parent.get_config_from_file()
         if self.name in config["channels"]:
             self.load_config()
         else:
             self.save_config()
-        self.widget = self.create_widget()
 
         if osp.exists(self.filename): # load existing data (widget needs to exist to plot)
             with open(self.filename, 'r') as f:
@@ -121,23 +116,14 @@ class ChannelLogger(ChannelBase):
         self._delay = val
         self.save_config()
 
-    def save_config(self):
-        config = self.parent.get_config_from_file()
-        config['channels'][self.name] = self.args
-        self.parent.write_config_to_file(config)
-
-    def load_config(self):
-        config = self.parent.get_config_from_file()
-        self.args = config['channels'][self.name]
-
     @property
     def args(self):
-        return self.visible, self.active, self.delay, self.callback
+        return self.active, self.delay, self.callback
 
     @args.setter
     def args(self, val):
-        # set active last to trigger measurment
-        self.visible, active, self.delay, self.callback = val
+        # set active last to trigger measurement
+        active, self.delay, self.callback = val
         self.active = active
 
     @property
