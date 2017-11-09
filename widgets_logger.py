@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import asyncio
 import time
 import numpy as np
-import .widgets_base as wb
+from . import widgets_base as wb
 
 class DataLoggerWidget(QtWidgets.QMainWindow):
     def __init__(self, datalogger):

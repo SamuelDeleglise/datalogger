@@ -6,10 +6,10 @@ try:
     IPYTHON = get_ipython()
     IPYTHON.magic("gui qt")
 except BaseException as e:
-    logger.debug('Could not enable IPython gui support: %s.' % e)
+    pass
 
 # get QApplication instance
 from qtpy import QtCore, QtWidgets
 APP = QtWidgets.QApplication.instance()
 if APP is None:
-    APP = QtWidgets.QApplication(['pyrpl'])
+    APP = QtWidgets.QApplication(['datalogger'])

@@ -20,7 +20,7 @@ import datetime
 from qtpy.QtWidgets import QApplication
 from .channel_base import ChannelBase, BaseModule
 
-from .widgets_base import DataLoggerWidget
+from .widgets_logger import DataLoggerWidget
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
@@ -34,9 +34,10 @@ class ChannelLogger(ChannelBase):
 
         self.error_state = True  # no callback defined at the beginnning
         self.callback_func = None
-        self._callback = "random_coroutine"
         self._active = False
         self._delay = 5
+        self.callback = "random_coroutine"
+
 
         config = self.parent.get_config_from_file()
         if self.name in config["channels"]:

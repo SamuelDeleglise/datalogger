@@ -3,6 +3,7 @@ import os
 import shutil
 import time
 import numpy as np
+from ..channel_base import sleep_with_loop
 
 from .. import DataLogger
 
@@ -39,7 +40,6 @@ class TestChannels(TestBase):
 
     def setUp(self):
         super(TestChannels, self).setUp()
-        self.dlg = DataLogger()
         self.chan = self.dlg.new_channel()
         print("Setting Up")
 
@@ -50,15 +50,13 @@ class TestChannels(TestBase):
         self.chan.callback = 'random_func'
         assert not self.chan.error_state
 
-    """
     def test_acquisition(self):
         self.chan.delay = 0.
         self.chan.active = True
-        time.sleep(.1)
+        sleep_with_loop(1.)
         with open(self.chan.filename, 'rb') as f:
             data = np.frombuffer(f.read(), dtype=float)
         times = data[::2]
         values = data[1::2]
 
         assert(len(times)==len(values) and len(times)>0)
-    """

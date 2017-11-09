@@ -19,7 +19,7 @@ import datetime
 
 from qtpy.QtWidgets import QApplication
 
-from .widgets_base import DataPlotterWidget
+from .widgets_plotter import DataPlotterWidget
 from .channel_base import ChannelBase, BaseModule
 
 from quamash import QEventLoop, QThreadExecutor

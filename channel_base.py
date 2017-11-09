@@ -17,7 +17,7 @@ from qtpy.QtWidgets import QApplication
 import datetime
 from qtpy import QtCore
 
-from .widgets_base import DataLoggerWidget
+from .widgets_logger import DataLoggerWidget
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
@@ -29,7 +29,6 @@ set_event_loop(LOOP)
 
 
 def sleep_with_loop(interval):
-    #while(not f.done()):
     f = ensure_future(asyncio.sleep(interval))
     while not f.done():
         APP.processEvents()
