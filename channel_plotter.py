@@ -14,7 +14,6 @@ import asyncio
 import sys
 import struct
 
-
 #modif Edouard
 import datetime
 
@@ -32,7 +31,8 @@ set_event_loop(quamash.QEventLoop())
 class ChannelPlotter(ChannelBase):
 
     def initialize(self):
-        super._visible = True
+        self.name = name
+        self._visible = True
 
     def plot_points(self, vals, times):
         '''
@@ -56,6 +56,14 @@ class ChannelPlotter(ChannelBase):
         self.set_curve_visible(val)
         self.save_config()
 
+    @property
+    def args(self):
+        return self.visible
+
+    @args.setter
+    def args(self, val):
+        self.visible = val
+
     def load_data(self):
         """Load data from file"""
         with open(self.filename, 'rb') as f:
@@ -63,7 +71,6 @@ class ChannelPlotter(ChannelBase):
         times = data[::2]
         values = data[1::2]
 
-        # modif Edouard
         values = values[times > self.parent.earliest_point]
         times = times[times > self.parent.earliest_point]
 

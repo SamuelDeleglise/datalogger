@@ -14,13 +14,39 @@ import asyncio
 import sys
 import struct
 
+#modif Edouard
+import datetime
+
+from qtpy.QtWidgets import QApplication
+from .channel_base import ChannelBase, BaseModule
+
+from .widgets import DataLoggerWidget
+
+from quamash import QEventLoop, QThreadExecutor
+#app = QApplication.instance()
+app = QApplication(sys.argv)
+
+set_event_loop(quamash.QEventLoop())
+
 class ChannelBase(object):
 
     def __init__(self):
+        self.parent = parent
+
         self.initialize()
+        self.widget = self.create_widget()
 
     def create_widget(self):
         return self.parent.widget.create_channel(self)
+
+    def load_config(self):
+        config = self.parent.get_config_from_file()
+        self.args = config['channels'][self.name]
+
+    def save_config(self):
+        config = self.parent.get_config_from_file()
+        config['channels'][self.name] = self.args
+        self.parent.write_config_to_file(config)
 
 
 class BaseModule(object):
@@ -32,6 +58,7 @@ class BaseModule(object):
         """
         If directory is None, uses the default home directory (+.datalogger)
         """
+
         self.channels = dict()
         self.prepare_path(path)
         self.initialize()
