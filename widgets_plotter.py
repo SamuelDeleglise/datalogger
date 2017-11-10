@@ -88,8 +88,10 @@ class MyControlWidget(QtWidgets.QWidget):
         self.real_time_button = QtWidgets.QRadioButton('Set real-time')
         self.calendar_button = QtWidgets.QRadioButton('Select start date')
 
+
         for widget in [self.real_time_button, self.calendar_button]:
             self.lay_v.addWidget(widget)
+        self.real_time_button.setChecked(self.dlg.show_real_time)
         self.calendar = QtWidgets.QCalendarWidget()
         self.calendar.setSelectedDate(self.dlg.selected_date)
         self.lay_v.addWidget(self.calendar)
@@ -98,7 +100,18 @@ class MyControlWidget(QtWidgets.QWidget):
         self.calendar_button.clicked.connect(self.real_time_toggled)
         self.calendar.selectionChanged.connect(self.real_time_toggled)
 
+        self.set_green_days()
+
         self.spinbox.valueChanged.connect(self.update_days_to_show)
+
+    def set_green_days(self):
+        """
+        Days with existing data are green in the calendar
+        """
+        font = QtGui.QTextCharFormat()
+        font.setBackground(QtGui.QColor('green'))
+        for day in self.dlg.days_with_data:
+            self.calendar.setDateTextFormat(day, font)
 
     def real_time_toggled(self):
         real_time =  self.real_time_button.isChecked()

@@ -13,6 +13,7 @@ import quamash
 import asyncio
 import sys
 import struct
+import bisect
 from qtpy import QtCore
 
 #modif Edouard
@@ -34,6 +35,7 @@ class ChannelPlotter(ChannelBase):
     def initialize_attributes(self, name):
         self._visible = False
         self._name = name
+        self.all_dates = []# an ordered list of all existing dates in the data
         self.load_data()
 
         config = self.parent.get_config_from_file()
@@ -99,6 +101,38 @@ class ChannelPlotter(ChannelBase):
             data = np.frombuffer(f.read(), dtype=float)
         self.times = data[::2]
         self.values = data[1::2]
+        self.update_days_with_data()
+
+    def find_intermediate_dates(self, date_start, date_end, index_start, index_end):
+        if date_start==date_end:
+            pass
+        index = bisect.bisect(self.all_dates, date_start)
+        bisect.insort(self.all_dates, date_start)
+        bisect.insort(self.all_dates, date_end)
+
+
+
+    def update_days_with_data(self):
+        """
+        Maintains a list of days where data have been acquired
+        """
+        # for now, use a naive method
+
+        """
+        current_date = fromtimestamp(self.times[0])
+        self.all_dates = []
+        def find_intermediate_dates(date_start, date_end):
+            all_dates.insert
+        """
+
+
+        current_date = None
+        for time in self.times[::10000]:
+            new_date = datetime.datetime.fromtimestamp(time)
+            if new_date!=current_date:
+                current_date = new_date
+                if not current_date in self.parent.days_with_data:
+                    self.parent.days_with_data.append(current_date)
 
     def load_and_plot_data(self):
         """Load data from file"""
@@ -117,6 +151,7 @@ class DataPlotter(BaseModule):
         self._days_to_show = 1
         self._selected_date = datetime.datetime.now()
         self._show_real_time = True
+        self.days_with_data = []
 
     def prepare_path(self, path):
         if osp.isdir(path): # use the default config_file path/dataplotter.conf
@@ -157,8 +192,7 @@ class DataPlotter(BaseModule):
         if self.show_real_time:
             return time.time()
         else:
-            selected_timestamp = time.mktime(self.selected_date)
-            print(selected_timestamp)
+            selected_timestamp = time.mktime(self.selected_date.timetuple())
             return selected_timestamp
 
     @property
