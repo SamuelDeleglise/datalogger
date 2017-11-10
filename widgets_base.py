@@ -16,7 +16,7 @@ class MyTreeItem(QtWidgets.QTreeWidgetItem):
         MyTreeItem.N_CHANNELS += 1
         self.dlg = parent.dlg
         self.setText(0, channel.name)
-        for index, val in enumerate(channel.args):
+        for index, val in enumerate( (channel.args, ) ):
             if isinstance(val, bool):
                 self.setCheckState(index + 1, val * 2)
             else:

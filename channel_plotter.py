@@ -35,12 +35,19 @@ class ChannelPlotter(ChannelBase):
         self._name = name
         self.load_data()
 
+        config = self.parent.get_config_from_file()
+        if self.name in config["channels"]:
+            self.load_config()
+        else:
+            self.save_config()
+    '''
     def plot_points(self, vals, times):
-        '''
-        Erases the current curve and replots all the requested data
-        '''
+     
+        #Erases the current curve and replots all the requested data
+       
 
         self.widget.plot_points(vals, times)
+    '''
 
     def set_curve_visible(self, val):
         # ignores the visibility toggle until the widget attr has been successfully loaded
@@ -81,7 +88,7 @@ class ChannelPlotter(ChannelBase):
 
     @property
     def args(self):
-        return [self.visible]
+        return self.visible
 
     @args.setter
     def args(self, val):
@@ -94,6 +101,11 @@ class ChannelPlotter(ChannelBase):
         self.times = data[::2]
         self.values = data[1::2]
 
+        time_span = (self.times > self.parent.earliest_point) * (self.times < self.parent.latest_point)
+        self.values = self.values[time_span]
+        self.times = self.times[time_span]
+
+
 class DataPlotter(BaseModule):
     widget_type = DataPlotterWidget
 
@@ -101,8 +113,6 @@ class DataPlotter(BaseModule):
         self._days_to_show = 1
         self.latest_point_selected = time.time()
         self._show_real_time = False
-        self.channel_name_source = self.load_a_channel
-
 
     def prepare_path(self, path):
         if osp.isdir(path): # use the default config_file path/dataplotter.conf
@@ -142,10 +152,14 @@ class DataPlotter(BaseModule):
 
     def save_config(self):
         config = self.get_config_from_file()
+        config['days_to_show'] = self.days_to_show
         self.write_config_to_file(config)
 
     def load_config(self):
         config = self.get_config_from_file()
+        if not 'channels' in config:
+            config['channels'] = dict() #makes sure the dictionnary is initialised
+            self.write_config_to_file(config)
         if "days_to_show" in config:
             self.days_to_show = config["days_to_show"]
 

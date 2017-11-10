@@ -180,7 +180,8 @@ class DataLogger(BaseModule):
         self.write_config_to_file(config)
 
     def load_config(self):
-        config = self.get_config_from_file()
+        pass
+        #config = self.get_config_from_file()
 
     def run_start_script(self):
         self.script_locals = dict()
