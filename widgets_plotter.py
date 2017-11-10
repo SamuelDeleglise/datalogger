@@ -4,12 +4,12 @@ import asyncio
 import time
 import numpy as np
 from . import widgets_base as wb
-
+import os.path as osp
 
 class DataPlotterWidget(QtWidgets.QMainWindow):
     def __init__(self, dataplotter):
         super(DataPlotterWidget, self).__init__()
-        self.dlg = dataplotter
+        self.dlg = dataplotter #this dataplotter does not contain any channels yet
 
         self.graph = pg.GraphicsWindow(title="DataPlotter")
         self.plot_item = self.graph.addPlot(title="DataPlotter", axisItems={
@@ -36,17 +36,19 @@ class PlotterItem(wb.MyTreeItem):
         self.channel = channel
 
         self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
-        self.curve.setVisible(channel.visible)
-        self.N_CHANNELS += 1
-
         self.plot_points(self.channel.values, self.channel.times)
 
+        PlotterItem.N_CHANNELS += 1
+
     def plot_points(self, vals, times):
-        self.values = [val for val in vals]
-        self.times = [time for time in times]
+        time_span = (times > self.channel.parent.earliest_point) * (times < self.channel.parent.latest_point)
 
-        self.curve.setData(self.times, self.values)
+        self.values = [val for val in vals[time_span]]
+        self.times = [time for time in times[time_span]]
 
+        if self.channel.visible:
+            self.curve.setData(self.times, self.values)
+        self.curve.setVisible(self.channel.visible)
 
 class PlotterTree(wb.MyTreeWidget):
     item_class = PlotterItem
@@ -88,23 +90,14 @@ class MyControlWidget(QtWidgets.QWidget):
     def update_days_to_show(self):
         days = self.spinbox.value()
         self.dlg.days_to_show = days
-        print('dts updated')
-        self.update_plot()
-        #self.tree.
 
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
 
-    def update_plot(self):
-        itemno = len(self.dlg.channels)
-        for i in range (0, itemno):
-            item = self.tree.topLevelItem(i)
-            item.plot_points(item.channel.values, item.channel.times)
 
 class MyDockTreeWidget(QtWidgets.QDockWidget):
     def __init__(self, dataplotter):
         super(MyDockTreeWidget, self).__init__()
-
         self.mycontrolwidget = MyControlWidget(dataplotter)
         self.tree = self.mycontrolwidget.tree
         self.setWidget(self.mycontrolwidget)

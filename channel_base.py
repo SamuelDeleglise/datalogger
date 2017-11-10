@@ -40,10 +40,13 @@ class ChannelBase(object):
         self._name = name
         self.parent = parent
         self.initialize_attributes(name)
-        self.widget = self.create_widget()
+        #self.widget = self.create_widget()
 
     def intialize_attributes(self):
         pass
+
+    def initialize_widget(self):
+        self.widget = self.create_widget()
 
     def create_widget(self):
         return self.parent.widget.create_channel(self)
@@ -72,10 +75,12 @@ class BaseModule(object):
         self.prepare_path(path)
         self.initialize()
         self.load_config()
-        self.widget = self.widget_type(self)
         self.load_channels()
 
-
+        #widget initialization done at the very end of the BaseModule initialization (also for channels so self.chan already exists when calling the widget)
+        self.widget = self.widget_type(self)
+        for chan in self.channels.values():
+            chan.initialize_widget()
 
     def get_config_from_file(self):
         if not osp.exists(self.config_file):
@@ -86,10 +91,3 @@ class BaseModule(object):
     def write_config_to_file(self, config_dict):
         with open(self.config_file, 'w') as f:
             json.dump(config_dict, f)
-
-    def load_a_channel(self):
-        '''
-        Should give a choice of exising channels and load the selected one 
-        '''
-
-        pass

@@ -13,6 +13,7 @@ import quamash
 import asyncio
 import sys
 import struct
+from qtpy import QtCore
 
 #modif Edouard
 import datetime
@@ -31,7 +32,7 @@ set_event_loop(quamash.QEventLoop())
 class ChannelPlotter(ChannelBase):
 
     def initialize_attributes(self, name):
-        self._visible = True
+        self._visible = False
         self._name = name
         self.load_data()
 
@@ -40,19 +41,16 @@ class ChannelPlotter(ChannelBase):
             self.load_config()
         else:
             self.save_config()
-    '''
-    def plot_points(self, vals, times):
-     
-        #Erases the current curve and replots all the requested data
-       
 
-        self.widget.plot_points(vals, times)
-    '''
+        self.change_detector = QtCore.QFileSystemWatcher()
+        self.change_detector.addPath(self.filename)
+        self.change_detector.fileChanged.connect(self.load_and_plot_data)
 
     def set_curve_visible(self, val):
         # ignores the visibility toggle until the widget attr has been successfully loaded
+
         if hasattr(self, 'widget'):
-            self.widget.curve.setVisible(val)
+            self.widget.plot_points(self.values, self.times)
 
     @property
     def directory(self):
@@ -101,9 +99,14 @@ class ChannelPlotter(ChannelBase):
         self.times = data[::2]
         self.values = data[1::2]
 
-        time_span = (self.times > self.parent.earliest_point) * (self.times < self.parent.latest_point)
-        self.values = self.values[time_span]
-        self.times = self.times[time_span]
+    def load_and_plot_data(self):
+        """Load data from file"""
+        self.load_data()
+        self.plot_data()
+
+    def plot_data(self):
+        if self.widget is not None:
+            self.widget.plot_points(self.values, self.times)
 
 
 class DataPlotter(BaseModule):
@@ -112,7 +115,7 @@ class DataPlotter(BaseModule):
     def initialize(self):
         self._days_to_show = 1
         self.latest_point_selected = time.time()
-        self._show_real_time = False
+        self._show_real_time = True
 
     def prepare_path(self, path):
         if osp.isdir(path): # use the default config_file path/dataplotter.conf
@@ -128,8 +131,7 @@ class DataPlotter(BaseModule):
     def days_to_show(self, val):
         self._days_to_show = val
         self.save_config()
-        for ch in self.channels.values():
-            ch.load_data()
+        self.update_plot()
 
     @property
     def show_real_time(self):
@@ -162,16 +164,26 @@ class DataPlotter(BaseModule):
             self.write_config_to_file(config)
         if "days_to_show" in config:
             self.days_to_show = config["days_to_show"]
+        if "show_real_time" in config:
+            self.show_real_time = config["show_real_time"]
+        if "latest_point" in config:
+            self.latest_point = config["latest_point"]
 
     def load_channels(self):
         for val in os.listdir(osp.dirname(self.config_file)):
             if val.endswith('.chan'):
                 name = val.rstrip('.chan')
+                #prevents reloading all the channels if a new channel is added while running
+                #if self.channels[name] not in self.channels:
                 self.channels[name] = ChannelPlotter(self, name)
 
     @property
     def directory(self):
         return osp.dirname(self.config_file)
+
+    def update_plot(self):
+        for channel in self.channels.values():
+            channel.plot_data()
 
 # from qtpy import QtWidgets, QtCore
 # w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
