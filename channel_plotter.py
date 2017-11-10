@@ -5,7 +5,7 @@ import numpy as np
 from shutil import copyfile
 import asyncio
 from asyncio import ensure_future
-import time
+import time, datetime
 import inspect
 from asyncio import Future, ensure_future, CancelledError, \
     set_event_loop, TimeoutError
@@ -50,7 +50,8 @@ class ChannelPlotter(ChannelBase):
         # ignores the visibility toggle until the widget attr has been successfully loaded
 
         if hasattr(self, 'widget'):
-            self.widget.plot_points(self.values, self.times)
+            #self.widget.plot_points(self.values, self.times)
+            self.widget.curve.setVisible(self.visible)
 
     @property
     def directory(self):
@@ -114,7 +115,7 @@ class DataPlotter(BaseModule):
 
     def initialize(self):
         self._days_to_show = 1
-        self.latest_point_selected = time.time()
+        self._selected_date = datetime.datetime.now()
         self._show_real_time = True
 
     def prepare_path(self, path):
@@ -142,11 +143,23 @@ class DataPlotter(BaseModule):
         self._show_real_time = val
 
     @property
+    def selected_date(self):
+        return self._selected_date
+
+    @selected_date.setter
+    def selected_date(self, val):
+        self._selected_date = val
+        self.save_config()
+        self.update_plot()
+
+    @property
     def latest_point(self):
         if self.show_real_time:
             return time.time()
         else:
-            return self.latest_point_selected
+            selected_timestamp = time.mktime(self.selected_date)
+            print(selected_timestamp)
+            return selected_timestamp
 
     @property
     def earliest_point(self):
@@ -155,6 +168,8 @@ class DataPlotter(BaseModule):
     def save_config(self):
         config = self.get_config_from_file()
         config['days_to_show'] = self.days_to_show
+        config["show_real_time"] = self.show_real_time
+        #config["selected_date"] = self.selected_date
         self.write_config_to_file(config)
 
     def load_config(self):
@@ -166,8 +181,10 @@ class DataPlotter(BaseModule):
             self.days_to_show = config["days_to_show"]
         if "show_real_time" in config:
             self.show_real_time = config["show_real_time"]
-        if "latest_point" in config:
-            self.latest_point = config["latest_point"]
+        '''
+        if "selected_date" in config:
+            self.selected_date = config["selected_date"]
+        '''
 
     def load_channels(self):
         for val in os.listdir(osp.dirname(self.config_file)):

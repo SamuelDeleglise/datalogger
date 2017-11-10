@@ -1,7 +1,7 @@
 from qtpy import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 import asyncio
-import time
+import time, datetime
 import numpy as np
 from . import widgets_base as wb
 import os.path as osp
@@ -85,7 +85,34 @@ class MyControlWidget(QtWidgets.QWidget):
         self.lay_v.addWidget(self.tree)
         self.spinbox.setValue(self.dlg.days_to_show)
 
+        self.real_time_button = QtWidgets.QRadioButton('Set real-time')
+        self.calendar_button = QtWidgets.QRadioButton('Select start date')
+
+        for widget in [self.real_time_button, self.calendar_button]:
+            self.lay_v.addWidget(widget)
+        self.calendar = QtWidgets.QCalendarWidget()
+        self.calendar.setSelectedDate(self.dlg.selected_date)
+        self.lay_v.addWidget(self.calendar)
+
+        self.real_time_button.clicked.connect(self.real_time_toggled)
+        self.calendar_button.clicked.connect(self.real_time_toggled)
+        self.calendar.selectionChanged.connect(self.real_time_toggled)
+
         self.spinbox.valueChanged.connect(self.update_days_to_show)
+
+    def real_time_toggled(self):
+        real_time =  self.real_time_button.isChecked()
+        self.dlg.show_real_time = real_time
+        self.calendar.setEnabled(not real_time)
+
+        if not real_time:
+            date = self.calendar.selectedDate()
+
+        else:
+            date = QtCore.QDate.now()
+
+        print(date.toPyDate())
+        self.dlg.selected_date = date.toPyDate()
 
     def update_days_to_show(self):
         days = self.spinbox.value()
