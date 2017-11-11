@@ -7,9 +7,10 @@ sys.path.append(dir_path) # In case datalogger not
 
 
 if __name__=='__main__':
-    directory = sys.argv[1]
-
-
+    if len(sys.argv)>=2:
+        directory = sys.argv[1]
+    else:
+        directory = None
     APP = QtWidgets.QApplication(sys.argv)
 
     from datalogger import DataLogger

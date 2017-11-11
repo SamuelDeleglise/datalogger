@@ -300,7 +300,6 @@ class DataPlotter(BaseModule):
         for val in os.listdir(self.directory):
             if val.endswith('.chan'):
                 name = val[:-5]
-                print(name)
                 #prevents reloading all the channels if a new channel is added while running
                 #if self.channels[name] not in self.channels:
                 try:
