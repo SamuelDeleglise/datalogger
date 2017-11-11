@@ -6,6 +6,7 @@ import numpy as np
 from . import widgets_base as wb
 import os.path as osp
 
+
 class DataPlotterWidget(QtWidgets.QMainWindow):
     def __init__(self, dataplotter):
         super(DataPlotterWidget, self).__init__()
@@ -88,24 +89,38 @@ class MyControlWidget(QtWidgets.QWidget):
         self.lay_v = QtWidgets.QVBoxLayout()
         self.setLayout(self.lay_v)
         self.lay_h = QtWidgets.QHBoxLayout()
-        self.lay_v.addLayout(self.lay_h)
 
-        self.label = QtWidgets.QLabel("# of days to display")
+        self.real_time_button = QtWidgets.QRadioButton('real-time')
+        self.calendar_button = QtWidgets.QRadioButton('choose date')
+
+        self.lay_radio = QtWidgets.QVBoxLayout()
+        for widget in [self.real_time_button, self.calendar_button]:
+            self.lay_radio.addWidget(widget)
+        self.lay_h.addLayout(self.lay_radio)
+
+        self.label = QtWidgets.QLabel("Show ")
         self.lay_h.addWidget(self.label)
-        self.spinbox = QtWidgets.QSpinBox()
-        self.lay_h.addWidget(self.spinbox)
+        self.spinbox_days = QtWidgets.QSpinBox()
+        self.lay_h.addWidget(self.spinbox_days)
+        self.label_day = QtWidgets.QLabel("days, ")
+        self.lay_h.addWidget(self.label_day)
+        self.spinbox_hours = QtWidgets.QSpinBox()
+        self.label_hours = QtWidgets.QLabel("hours, ")
+        self.lay_h.addWidget(self.spinbox_hours)
+        self.lay_h.addWidget(self.label_hours)
+        self.spinbox_minutes = QtWidgets.QSpinBox()
+        self.label_minutes = QtWidgets.QLabel("minutes")
+        self.lay_h.addWidget(self.spinbox_minutes)
+        self.lay_h.addWidget(self.label_minutes)
         self.lay_h.addStretch()
 
         self.tree = PlotterTree(self.dlg)
         self.lay_v.addWidget(self.tree)
-        self.spinbox.setValue(self.dlg.days_to_show)
 
-        self.real_time_button = QtWidgets.QRadioButton('Set real-time')
-        self.calendar_button = QtWidgets.QRadioButton('Select start date')
-
-
-        for widget in [self.real_time_button, self.calendar_button]:
-            self.lay_v.addWidget(widget)
+        self.lay_v.addLayout(self.lay_h)
+        self.spinbox_days.setValue(self.dlg.days_to_show)
+        self.spinbox_hours.setValue(self.dlg.hours_to_show)
+        self.spinbox_minutes.setValue(self.dlg.minutes_to_show)
 
         self.real_time_button.setChecked(self.dlg.show_real_time)
         self.calendar_button.setChecked(not self.dlg.show_real_time)
@@ -118,14 +133,13 @@ class MyControlWidget(QtWidgets.QWidget):
         self.calendar_button.clicked.connect(self.real_time_toggled)
         self.calendar.selectionChanged.connect(self.real_time_toggled)
 
-
-
-        self.spinbox.valueChanged.connect(self.update_days_to_show)
+        self.spinbox_days.valueChanged.connect(self.update_days_to_show)
+        self.spinbox_hours.valueChanged.connect(self.update_hours_to_show)
+        self.spinbox_minutes.valueChanged.connect(self.update_minutes_to_show)
 
         self.selected_list = [self.dlg.selected_date - datetime.timedelta(n) for n in range(self.dlg.days_to_show)]
 
         self.set_green_days()
-        print(self.dlg.all_dates)
         self.update_calendar_display()
 
     def set_green_days(self):
@@ -135,7 +149,6 @@ class MyControlWidget(QtWidgets.QWidget):
         font = QtGui.QTextCharFormat()
         font.setBackground(QtGui.QColor(self.GREEN_COLOR))
         for day in self.dlg.find_all_dates():
-            print(day)
             self.calendar.setDateTextFormat(day, font)
 
     def real_time_toggled(self):
@@ -146,9 +159,12 @@ class MyControlWidget(QtWidgets.QWidget):
 
         if not real_time:
             date = self.calendar.selectedDate()
-
         else:
             date = QtCore.QDate.currentDate()
+
+        for widget in [self.spinbox_hours, self.label_hours, self.spinbox_minutes, self.label_minutes]:
+            widget.setVisible(real_time)
+        self.spinbox_days.setMinimum(0 if real_time else 1)
         self.dlg.selected_date = date.toPyDate()
         self.update_calendar_display()
 
@@ -159,12 +175,21 @@ class MyControlWidget(QtWidgets.QWidget):
             self.calendar.setDateTextFormat(date, self.GREEN_FONT if date in self.dlg.all_dates else self.BLANK_FONT)
         self.selected_list = [self.dlg.selected_date - datetime.timedelta(n) for n in range(self.dlg.days_to_show)]
         for date in self.selected_list:
-            print('date', date, 'all_dates', self.dlg.all_dates, date in self.dlg.all_dates)
             self.calendar.setDateTextFormat(date, self.SELECTED_GREEN_FONT if date in self.dlg.all_dates else self.SELECTED_BLANK_FONT)
 
     def update_days_to_show(self):
-        days = self.spinbox.value()
+        days = self.spinbox_days.value()
         self.dlg.days_to_show = days
+        self.update_calendar_display()
+
+    def update_hours_to_show(self):
+        hours = self.spinbox_hours.value()
+        self.dlg.hours_to_show = hours
+        self.update_calendar_display()
+
+    def update_minutes_to_show(self):
+        minutes = self.spinbox_minutes.value()
+        self.dlg.minutes_to_show = minutes
         self.update_calendar_display()
 
     def create_channel(self, channel):

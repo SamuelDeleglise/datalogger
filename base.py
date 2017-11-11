@@ -40,6 +40,8 @@ class ChannelBase(object):
         self._name = name
         self.parent = parent
         self.initialize_attributes(name)
+        self.load_config()
+        self.load_data()
         #self.widget = self.create_widget()
 
     def intialize_attributes(self):

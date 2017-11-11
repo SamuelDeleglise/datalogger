@@ -33,15 +33,8 @@ class ChannelPlotter(ChannelBase):
 
     def initialize_attributes(self, name):
         self._visible = False
-        self._name = name
+        #self._name = name
         self.all_dates = []# an ordered list of all existing dates in the data
-        self.load_data()
-
-        config = self.parent.get_config_from_file()
-        if self.name in config["channels"]:
-            self.load_config()
-        else:
-            self.save_config()
 
         self.change_detector = QtCore.QFileSystemWatcher()
         self.change_detector.addPath(self.filename)
@@ -105,9 +98,9 @@ class ChannelPlotter(ChannelBase):
         date_start = date.fromtimestamp(self.times[index_start])
         date_end = date.fromtimestamp(self.times[index_end])
         index_intermediate = (index_start + index_end)//2
-        date_intermediate = date.fromtimestamp(self.times[index_end])
+        date_intermediate = date.fromtimestamp(self.times[index_intermediate])
         if date_intermediate!=date_start and date_intermediate!=date_end:
-            bisect.insort(self.all_dates, self.date_intermediate)
+            bisect.insort(self.all_dates, date_intermediate)
         if date_intermediate - date_start > datetime.timedelta(1):
             self.find_intermediate_dates(index_start, index_intermediate)
         if date_end - date_intermediate > datetime.timedelta(1):
@@ -117,8 +110,11 @@ class ChannelPlotter(ChannelBase):
         if len(self.times)==0:
             self.all_dates = []
             return self.all_dates
-        self.all_dates = [date.fromtimestamp(self.times[0]),
-                            date.fromtimestamp(self.times[-1])]
+        date_start = date.fromtimestamp(self.times[0])
+        self.all_dates = [date_start]
+        date_end = date.fromtimestamp(self.times[-1])
+        if date_end!=date_start:
+            self.all_dates.append(date_end)
         self.find_intermediate_dates(0, len(self.times)-1)
         return self.all_dates
 
@@ -137,6 +133,8 @@ class DataPlotter(BaseModule):
 
     def initialize(self):
         self._days_to_show = 1
+        self._hours_to_show = 0
+        self._minutes_to_show = 0
         self._selected_date = datetime.date.today()
         self._show_real_time = True
         self.days_with_data = []
@@ -148,8 +146,12 @@ class DataPlotter(BaseModule):
             self.config_file = path
 
     def find_all_dates(self):
-        self.all_dates = list(heapq.merge(*[channel.find_all_dates() for channel in self.channels.values()]))
+        self.all_dates = set(heapq.merge(*[channel.find_all_dates() for channel in self.channels.values()]))
         return self.all_dates
+
+    @property
+    def seconds_to_show(self):
+        return self.days_to_show*3600*24 + self.hours_to_show*3600 + self.minutes_to_show*60
 
     @property
     def days_to_show(self):
@@ -158,6 +160,26 @@ class DataPlotter(BaseModule):
     @days_to_show.setter
     def days_to_show(self, val):
         self._days_to_show = val
+        self.save_config()
+        self.update_plot()
+
+    @property
+    def hours_to_show(self):
+        return self._hours_to_show
+
+    @hours_to_show.setter
+    def hours_to_show(self, val):
+        self._hours_to_show = val
+        self.save_config()
+        self.update_plot()
+
+    @property
+    def minutes_to_show(self):
+        return self._minutes_to_show
+
+    @minutes_to_show.setter
+    def minutes_to_show(self, val):
+        self._minutes_to_show = val
         self.save_config()
         self.update_plot()
 
@@ -189,11 +211,13 @@ class DataPlotter(BaseModule):
 
     @property
     def earliest_point(self):
-        return self.latest_point - 24*3600*self.days_to_show
+        return self.latest_point - self.seconds_to_show
 
     def save_config(self):
         config = self.get_config_from_file()
         config['days_to_show'] = self.days_to_show
+        config['hours_to_show'] = self.hours_to_show
+        config['minutes_to_show'] = self.minutes_to_show
         config["show_real_time"] = self.show_real_time
         #config["selected_date"] = self.selected_date
         self.write_config_to_file(config)
@@ -205,6 +229,10 @@ class DataPlotter(BaseModule):
             self.write_config_to_file(config)
         if "days_to_show" in config:
             self.days_to_show = config["days_to_show"]
+        if "hours_to_show" in config:
+            self.hours_to_show = config["hours_to_show"]
+        if "minutes_to_show" in config:
+            self.minutes_to_show = config["minutes_to_show"]
         if "show_real_time" in config:
             self.show_real_time = config["show_real_time"]
         '''
@@ -229,8 +257,3 @@ class DataPlotter(BaseModule):
             channel.plot_data()
         if self.widget is not None:
             self.widget.plot_item.setXRange(self.earliest_point, self.latest_point)
-
-# from qtpy import QtWidgets, QtCore
-# w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
-# w = QtCore.QFileSystemWatcher("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")
-# w.fileChanged.connect(lambda:print("coucou"))

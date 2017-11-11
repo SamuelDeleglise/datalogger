@@ -34,14 +34,9 @@ class ChannelLogger(ChannelBase):
         self.callback_func = None
         self._active = False
         self._delay = 5
-        self.callback = "random_coroutine"
+        self._callback = "random_coroutine"
 
-        config = self.parent.get_config_from_file()
-        if self.name in config["channels"]:
-            self.load_config()
-        else:
-            self.save_config()
-
+    def load_data(self):
         if osp.exists(self.filename): # load existing data (widget needs to exist to plot)
             with open(self.filename, 'r') as f:
                 pass
@@ -172,12 +167,10 @@ class DataLogger(BaseModule):
 
     def save_config(self):
         config = self.get_config_from_file()
-        #config["days_to_show"] = self.days_to_show
         self.write_config_to_file(config)
 
     def load_config(self):
         pass
-        #config = self.get_config_from_file()
 
     def run_start_script(self):
         self.script_locals = dict()
