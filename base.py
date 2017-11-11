@@ -71,6 +71,7 @@ class BaseModule(object):
         If directory is None, uses the default home directory (+.datalogger)
         """
 
+        self.widget = None
         self.channels = dict()
         if path is None:
             path = osp.join(os.environ["HOMEDRIVE"], os.environ[

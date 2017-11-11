@@ -137,7 +137,7 @@ class DataPlotter(BaseModule):
 
     def initialize(self):
         self._days_to_show = 1
-        self._selected_date = datetime.datetime.now()
+        self._selected_date = datetime.date.today()
         self._show_real_time = True
         self.days_with_data = []
 
@@ -148,7 +148,8 @@ class DataPlotter(BaseModule):
             self.config_file = path
 
     def find_all_dates(self):
-        return list(heapq.merge(*[channel.find_all_dates() for channel in self.channels.values()]))
+        self.all_dates = list(heapq.merge(*[channel.find_all_dates() for channel in self.channels.values()]))
+        return self.all_dates
 
     @property
     def days_to_show(self):
@@ -183,7 +184,7 @@ class DataPlotter(BaseModule):
         if self.show_real_time:
             return time.time()
         else:
-            selected_timestamp = time.mktime(self.selected_date.timetuple())
+            selected_timestamp = time.mktime(self.selected_date.timetuple()) + 24*3600
             return selected_timestamp
 
     @property
@@ -226,6 +227,8 @@ class DataPlotter(BaseModule):
     def update_plot(self):
         for channel in self.channels.values():
             channel.plot_data()
+        if self.widget is not None:
+            self.widget.plot_item.setXRange(self.earliest_point, self.latest_point)
 
 # from qtpy import QtWidgets, QtCore
 # w.addPath("Z:\ManipMembranes\Data Edouard\Datalogger Values\pressure_gauge.chan")

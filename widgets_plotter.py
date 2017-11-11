@@ -67,6 +67,21 @@ class PlotterTree(wb.MyTreeWidget):
 
 
 class MyControlWidget(QtWidgets.QWidget):
+    SELECTED_GREEN_COLOR = 'darkGreen'
+    SELECTED_GREEN_FONT = QtGui.QTextCharFormat()
+    SELECTED_GREEN_FONT.setBackground(QtGui.QColor(SELECTED_GREEN_COLOR))
+
+    GREEN_COLOR = 'green'
+    GREEN_FONT = QtGui.QTextCharFormat()
+    GREEN_FONT.setBackground(QtGui.QColor(GREEN_COLOR))
+
+    SELECTED_BLANK_COLOR = 'grey'
+    SELECTED_BLANK_FONT = QtGui.QTextCharFormat()
+    SELECTED_BLANK_FONT.setBackground(QtGui.QColor(SELECTED_BLANK_COLOR))
+
+    BLANK_FONT = QtGui.QTextCharFormat()
+    BLANK_FONT.setBackground(QtGui.QColor('white'))
+
     def __init__(self, dataplotter):
         super(MyControlWidget, self).__init__()
         self.dlg = dataplotter
@@ -91,26 +106,34 @@ class MyControlWidget(QtWidgets.QWidget):
 
         for widget in [self.real_time_button, self.calendar_button]:
             self.lay_v.addWidget(widget)
+
         self.real_time_button.setChecked(self.dlg.show_real_time)
+        self.calendar_button.setChecked(not self.dlg.show_real_time)
         self.calendar = QtWidgets.QCalendarWidget()
         self.calendar.setSelectedDate(self.dlg.selected_date)
+        self.calendar.setEnabled(not self.dlg.show_real_time)
         self.lay_v.addWidget(self.calendar)
 
         self.real_time_button.clicked.connect(self.real_time_toggled)
         self.calendar_button.clicked.connect(self.real_time_toggled)
         self.calendar.selectionChanged.connect(self.real_time_toggled)
 
-        self.set_green_days()
+
 
         self.spinbox.valueChanged.connect(self.update_days_to_show)
+
+        self.selected_list = [self.dlg.selected_date - datetime.timedelta(n) for n in range(self.dlg.days_to_show)]
+
+        self.set_green_days()
+        print(self.dlg.all_dates)
+        self.update_calendar_display()
 
     def set_green_days(self):
         """
         Days with existing data are green in the calendar
         """
         font = QtGui.QTextCharFormat()
-        font.setBackground(QtGui.QColor('green'))
-        print('setting green')
+        font.setBackground(QtGui.QColor(self.GREEN_COLOR))
         for day in self.dlg.find_all_dates():
             print(day)
             self.calendar.setDateTextFormat(day, font)
@@ -119,19 +142,30 @@ class MyControlWidget(QtWidgets.QWidget):
         real_time =  self.real_time_button.isChecked()
         self.dlg.show_real_time = real_time
         self.calendar.setEnabled(not real_time)
+        self.update_calendar_display()
 
         if not real_time:
             date = self.calendar.selectedDate()
 
         else:
-            date = QtCore.QDate.now()
-
-        print(date.toPyDate())
+            date = QtCore.QDate.currentDate()
         self.dlg.selected_date = date.toPyDate()
+        self.update_calendar_display()
+
+    def update_calendar_display(self):
+        selection_color = self.SELECTED_GREEN_COLOR if self.dlg.selected_date in self.dlg.all_dates else self.SELECTED_BLANK_COLOR
+        self.calendar.setStyleSheet("QTableView{selection-background-color: %s}"%selection_color)
+        for date in self.selected_list:
+            self.calendar.setDateTextFormat(date, self.GREEN_FONT if date in self.dlg.all_dates else self.BLANK_FONT)
+        self.selected_list = [self.dlg.selected_date - datetime.timedelta(n) for n in range(self.dlg.days_to_show)]
+        for date in self.selected_list:
+            print('date', date, 'all_dates', self.dlg.all_dates, date in self.dlg.all_dates)
+            self.calendar.setDateTextFormat(date, self.SELECTED_GREEN_FONT if date in self.dlg.all_dates else self.SELECTED_BLANK_FONT)
 
     def update_days_to_show(self):
         days = self.spinbox.value()
         self.dlg.days_to_show = days
+        self.update_calendar_display()
 
     def create_channel(self, channel):
         return self.tree.create_channel(channel)

@@ -202,7 +202,6 @@ class DataLogger(BaseModule):
         config = self.get_config_from_file()
         if 'channels' in config:
             for name in config['channels'].keys():
-                print(name)
                 self.channels[name] = ChannelLogger(self, name)
         else:
             config['channels'] = dict()
