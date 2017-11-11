@@ -48,9 +48,9 @@ class LoggerTree(wb.MyTreeWidget):
         for channel in self.dlg.channels.values():
             channel.name = str(channel.widget.text(0))
             #channel.visible = channel.widget.checkState(1) == 2
-            channel.active = channel.widget.checkState(2) == 2
-            channel.delay = float(channel.widget.text(3))
-            channel.callback = str(channel.widget.text(4))
+            channel.active = channel.widget.checkState(1) == 2
+            channel.delay = float(channel.widget.text(2))
+            channel.callback = str(channel.widget.text(3))
             channel.widget.show_error_state()
 
     def contextMenuEvent(self, evt):

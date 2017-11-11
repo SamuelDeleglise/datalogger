@@ -110,7 +110,9 @@ class MyControlWidget(QtWidgets.QWidget):
         """
         font = QtGui.QTextCharFormat()
         font.setBackground(QtGui.QColor('green'))
-        for day in self.dlg.days_with_data:
+        print('setting green')
+        for day in self.dlg.find_all_dates():
+            print(day)
             self.calendar.setDateTextFormat(day, font)
 
     def real_time_toggled(self):

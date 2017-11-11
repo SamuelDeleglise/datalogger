@@ -15,14 +15,13 @@ import sys
 import struct
 import bisect
 from qtpy import QtCore
-
-#modif Edouard
+import heapq
 import datetime
-
+from datetime import date
 from qtpy.QtWidgets import QApplication
 
 from .widgets_plotter import DataPlotterWidget
-from .channel_base import ChannelBase, BaseModule
+from .base import ChannelBase, BaseModule
 
 from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
@@ -89,11 +88,11 @@ class ChannelPlotter(ChannelBase):
 
     @property
     def args(self):
-        return self.visible
+        return self.visible,
 
     @args.setter
     def args(self, val):
-        self.visible = val
+        self.visible,  = val
 
     def load_data(self):
         """Load data from file"""
@@ -101,38 +100,27 @@ class ChannelPlotter(ChannelBase):
             data = np.frombuffer(f.read(), dtype=float)
         self.times = data[::2]
         self.values = data[1::2]
-        self.update_days_with_data()
 
-    def find_intermediate_dates(self, date_start, date_end, index_start, index_end):
-        if date_start==date_end:
-            pass
-        index = bisect.bisect(self.all_dates, date_start)
-        bisect.insort(self.all_dates, date_start)
-        bisect.insort(self.all_dates, date_end)
+    def find_intermediate_dates(self, index_start, index_end):
+        date_start = date.fromtimestamp(self.times[index_start])
+        date_end = date.fromtimestamp(self.times[index_end])
+        index_intermediate = (index_start + index_end)//2
+        date_intermediate = date.fromtimestamp(self.times[index_end])
+        if date_intermediate!=date_start and date_intermediate!=date_end:
+            bisect.insort(self.all_dates, self.date_intermediate)
+        if date_intermediate - date_start > datetime.timedelta(1):
+            self.find_intermediate_dates(index_start, index_intermediate)
+        if date_end - date_intermediate > datetime.timedelta(1):
+            self.find_intermediate_dates(index_intermediate, index_end)
 
-
-
-    def update_days_with_data(self):
-        """
-        Maintains a list of days where data have been acquired
-        """
-        # for now, use a naive method
-
-        """
-        current_date = fromtimestamp(self.times[0])
-        self.all_dates = []
-        def find_intermediate_dates(date_start, date_end):
-            all_dates.insert
-        """
-
-
-        current_date = None
-        for time in self.times[::10000]:
-            new_date = datetime.datetime.fromtimestamp(time)
-            if new_date!=current_date:
-                current_date = new_date
-                if not current_date in self.parent.days_with_data:
-                    self.parent.days_with_data.append(current_date)
+    def find_all_dates(self):
+        if len(self.times)==0:
+            self.all_dates = []
+            return self.all_dates
+        self.all_dates = [date.fromtimestamp(self.times[0]),
+                            date.fromtimestamp(self.times[-1])]
+        self.find_intermediate_dates(0, len(self.times)-1)
+        return self.all_dates
 
     def load_and_plot_data(self):
         """Load data from file"""
@@ -158,6 +146,9 @@ class DataPlotter(BaseModule):
             self.config_file = osp.join(path, 'dataplotter.conf')
         else:
             self.config_file = path
+
+    def find_all_dates(self):
+        return list(heapq.merge(*[channel.find_all_dates() for channel in self.channels.values()]))
 
     @property
     def days_to_show(self):

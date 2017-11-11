@@ -1,4 +1,5 @@
-from .channel_logger import DataLogger
+from .logger import DataLogger
+from .plotter import DataPlotter
 
 # enable ipython QtGui support if needed
 try:

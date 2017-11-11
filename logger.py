@@ -18,7 +18,7 @@ import struct
 import datetime
 
 from qtpy.QtWidgets import QApplication
-from .channel_base import ChannelBase, BaseModule
+from .base import ChannelBase, BaseModule
 
 from .widgets_logger import DataLoggerWidget
 
@@ -29,7 +29,6 @@ app = QApplication(sys.argv)
 set_event_loop(quamash.QEventLoop())
 
 class ChannelLogger(ChannelBase):
-
     def initialize_attributes(self, name):
         self.error_state = True  # no callback defined at the beginnning
         self.callback_func = None
@@ -137,8 +136,9 @@ class ChannelLogger(ChannelBase):
                     val = self.callback_func()
             except BaseException as e:
                 print(self.name, ':', e)
-            moment = time.time()
-            self.save_point(val, moment)
+            else:
+                moment = time.time()
+                self.save_point(val, moment)
             await asyncio.sleep(self.delay)
 
     def save_point(self, val, moment):
@@ -161,10 +161,6 @@ class DataLogger(BaseModule):
         self.run_start_script()
 
     def prepare_path(self, path):
-        self.directory = path
-        if path is None:
-            path = osp.join(os.environ["HOMEDRIVE"], os.environ[
-                "HOMEPATH"], '.datalogger')
         self.directory = path
         if not osp.exists(self.directory):
             os.mkdir(self.directory)
@@ -219,4 +215,3 @@ class DataLogger(BaseModule):
     @property
     def script_file(self):
         return osp.join(self.directory, 'start_script.py')
-
