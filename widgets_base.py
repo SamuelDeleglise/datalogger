@@ -7,6 +7,7 @@ import numpy as np
 
 class MyTreeItem(QtWidgets.QTreeWidgetItem):
     N_CHANNELS = 0
+    EDITABLE = False
     def __init__(self, parent, channel):
         super(MyTreeItem, self).__init__(parent)
         #self.times = []
@@ -21,8 +22,8 @@ class MyTreeItem(QtWidgets.QTreeWidgetItem):
                 self.setCheckState(index + 1, val * 2)
             else:
                 self.setText(index + 1, str(val))
-
-        self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
+        if self.EDITABLE:
+            self.setFlags(self.flags() | QtCore.Qt.ItemIsEditable)
 
         self.initialize(self.channel)
 
@@ -33,9 +34,15 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
         self.blockSignals(True)
         widget = self.item_class(self, channel)  # QtWidgets.QTreeWidgetItem(
         # self)
+        channel.widget = widget
         self.addTopLevelItem(widget)
         self.blockSignals(False)
         return widget
+
+    def remove_channel(self, channel):
+        self.blockSignals(True)
+        self.takeTopLevelItem(self.indexOfTopLevelItem(channel.widget))
+        self.blockSignals(False)
 
 
 class TimeAxisItem(pg.AxisItem):

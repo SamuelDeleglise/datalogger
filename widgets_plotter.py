@@ -27,19 +27,34 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
 
+    def remove_channel(self, channel):
+        channel.widget.curve.setData([], [])
+        return self.tree.remove_channel(channel)
+
+    def set_green_days(self):
+        self._dock_tree.mycontrolwidget.set_green_days()
+
+
 class PlotterItem(wb.MyTreeItem):
-    COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
-    N_CHANNELS = 0
+    #COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
+    #N_CHANNELS = 0
 
     def initialize(self, channel):
-        color = self.COLORS[self.N_CHANNELS % len(self.COLORS)]
-        self.setBackground(0, QtGui.QColor(color))
+        #self.color = self.COLORS[self.N_CHANNELS % len(self.COLORS)]
+        #self.setBackground(0, QtGui.QColor(color))
         self.channel = channel
-
-        self.curve = self.dlg.widget.plot_item.plot(pen=color[0])
+        self.curve = self.dlg.widget.plot_item.plot(pen=pg.mkPen(self.channel.color))
         self.plot_points(self.channel.values, self.channel.times)
+        self.button = QtWidgets.QPushButton(channel.name)
+        self.button.clicked.connect(self.ask_color)
+        self.dlg.widget.tree.setItemWidget(self, 0, self.button)
+        self.set_color(self.channel.color)
 
-        PlotterItem.N_CHANNELS += 1
+    def ask_color(self):
+        color = QtGui.QColor()
+        color.setNamedColor(self.channel.color)
+        color = QtWidgets.QColorDialog.getColor(color)
+        self.channel.color = color.name()
 
     def plot_points(self, vals, times):
         time_span = (times > self.channel.parent.earliest_point) * (times < self.channel.parent.latest_point)
@@ -50,6 +65,13 @@ class PlotterItem(wb.MyTreeItem):
         if self.channel.visible:
             self.curve.setData(self.times, self.values)
         self.curve.setVisible(self.channel.visible)
+
+    def set_color(self, color):
+        self.button.setStyleSheet('background-color: '+ color)
+        qt_color = QtGui.QColor()
+        qt_color.setNamedColor(color)
+        self.curve.setPen(pg.mkPen(qt_color))
+
 
 class PlotterTree(wb.MyTreeWidget):
     item_class = PlotterItem
@@ -194,6 +216,9 @@ class MyControlWidget(QtWidgets.QWidget):
 
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
+
+    def remove_channel(self, channel):
+        return self.tree.remove_channel(channel)
 
 
 class MyDockTreeWidget(QtWidgets.QDockWidget):

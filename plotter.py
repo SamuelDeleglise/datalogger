@@ -19,6 +19,7 @@ import heapq
 import datetime
 from datetime import date
 from qtpy.QtWidgets import QApplication
+from qtpy import QtGui, QtWidgets
 
 from .widgets_plotter import DataPlotterWidget
 from .base import ChannelBase, BaseModule
@@ -29,10 +30,25 @@ app = QApplication(sys.argv)
 
 set_event_loop(quamash.QEventLoop())
 
-class ChannelPlotter(ChannelBase):
+class FileNotFoundError(ValueError): pass
 
+class ChannelPlotter(ChannelBase):
+    INDEX = 0
+    COLORS = ['#1f77b4',
+              '#ff7f0e',
+              '#2ca02c',
+              '#d62728',
+              '#9467bd',
+              '#8c564b',
+              '#e377c2',
+              '#7f7f7f',
+              '#bcbd22',
+              '#17becf']
+    #[QtGui.QColor(name).name() for name in QtGui.QColor.colorNames()]
     def initialize_attributes(self, name):
         self._visible = False
+        self._color = self.COLORS[ChannelPlotter.INDEX%len(ChannelPlotter.COLORS)]
+        ChannelPlotter.INDEX+=1
         #self._name = name
         self.all_dates = []# an ordered list of all existing dates in the data
 
@@ -42,8 +58,7 @@ class ChannelPlotter(ChannelBase):
 
     def set_curve_visible(self, val):
         # ignores the visibility toggle until the widget attr has been successfully loaded
-
-        if hasattr(self, 'widget'):
+        if self.widget is not None:
             #self.widget.plot_points(self.values, self.times)
             self.widget.curve.setVisible(self.visible)
 
@@ -80,19 +95,33 @@ class ChannelPlotter(ChannelBase):
         self.save_config()
 
     @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, val):
+        self._color = val
+        if self.widget is not None:
+            self.widget.set_color(val)
+        self.save_config()
+
+    @property
     def args(self):
-        return self.visible,
+        return self.visible, self.color
 
     @args.setter
     def args(self, val):
-        self.visible,  = val
+        self.visible, self.color = val
 
     def load_data(self):
         """Load data from file"""
-        with open(self.filename, 'rb') as f:
-            data = np.frombuffer(f.read(), dtype=float)
-        self.times = data[::2]
-        self.values = data[1::2]
+        if osp.exists(self.filename):
+            with open(self.filename, 'rb') as f:
+                data = np.frombuffer(f.read(), dtype=float)
+            self.times = data[::2]
+            self.values = data[1::2]
+        else:
+            raise FileNotFoundError("No file named " + str(self.filename))
 
     def find_intermediate_dates(self, index_start, index_end):
         date_start = date.fromtimestamp(self.times[index_start])
@@ -123,6 +152,10 @@ class ChannelPlotter(ChannelBase):
         self.load_data()
         self.plot_data()
 
+        if not date.fromtimestamp(self.times[-1]) in self.parent.all_dates:
+            if self.widget is not None:
+                self.parent.widget.set_green_days()
+
     def plot_data(self):
         if self.widget is not None:
             self.widget.plot_points(self.values, self.times)
@@ -138,6 +171,29 @@ class DataPlotter(BaseModule):
         self._selected_date = datetime.date.today()
         self._show_real_time = True
         self.days_with_data = []
+
+        self.change_detector = QtCore.QFileSystemWatcher([self.directory])
+        self.change_detector.directoryChanged.connect(self.update_channel_list)
+
+    def update_channel_list(self):
+        keep = []
+        for val in os.listdir(osp.dirname(self.config_file)):
+            if val.endswith('.chan'):
+                name = val[:-5]
+                keep.append(name)
+                if not name in self.channels.keys():
+                    chan = ChannelPlotter(self, name)
+                    self.channels[name] = chan
+                    chan.widget = chan.create_widget()
+        to_remove = []
+        for key in self.channels.keys():
+            if not key in keep:
+                to_remove.append(key)
+        for key in to_remove:
+            if self.widget is not None:
+                self.widget.remove_channel(self.channels[key])
+                del self.channels[key]
+
 
     def prepare_path(self, path):
         if osp.isdir(path): # use the default config_file path/dataplotter.conf
@@ -241,13 +297,16 @@ class DataPlotter(BaseModule):
         '''
 
     def load_channels(self):
-        for val in os.listdir(osp.dirname(self.config_file)):
+        for val in os.listdir(self.directory):
             if val.endswith('.chan'):
-                name = val.rstrip('.chan')
+                name = val[:-5]
+                print(name)
                 #prevents reloading all the channels if a new channel is added while running
                 #if self.channels[name] not in self.channels:
-                self.channels[name] = ChannelPlotter(self, name)
-
+                try:
+                    self.channels[name] = ChannelPlotter(self, name)
+                except FileNotFoundError:
+                    pass
     @property
     def directory(self):
         return osp.dirname(self.config_file)

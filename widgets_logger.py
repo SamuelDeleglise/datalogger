@@ -23,8 +23,12 @@ class DataLoggerWidget(QtWidgets.QMainWindow):
     def create_channel(self, channel):
         return self.tree.create_channel(channel)
 
+    def remove_channel(self, channel):
+        self.tree.remove_channel(channel)
+
 
 class LoggerItem(wb.MyTreeItem):
+    EDITABLE = True
     def initialize(self, channel):
         self.show_error_state()
 
@@ -60,9 +64,21 @@ class LoggerTree(wb.MyTreeWidget):
         action_add.triggered.connect(self.dlg.new_channel)
         menu.addAction(action_add)
 
+        item = self.itemAt(evt.pos())
+        if item is not None:
+            action_remove = QtWidgets.QAction(menu)
+            channel = item.channel
+            action_remove.setText('remove ' + channel.name)
+            def remove_item():
+                self.dlg.remove_channel(item.channel)
+            action_remove.triggered.connect(remove_item)
+            menu.addAction(action_remove)
+
+
         action_rerun = QtWidgets.QAction(menu)
         action_rerun.setText('run start_script again')
         action_rerun.triggered.connect(self.dlg.run_start_script)
+
         menu.addAction(action_rerun)
         menu.exec(evt.globalPos())
 

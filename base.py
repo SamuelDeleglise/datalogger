@@ -37,6 +37,7 @@ def sleep_with_loop(interval):
 class ChannelBase(object):
 
     def __init__(self, parent, name):
+        self.widget = None
         self._name = name
         self.parent = parent
         self.initialize_attributes(name)
@@ -55,7 +56,12 @@ class ChannelBase(object):
 
     def load_config(self):
         config = self.parent.get_config_from_file()
-        self.args = config['channels'][self.name]
+        if self.name in config['channels']:
+            self.args = config['channels'][self.name]
+        else:
+            config['channels'][self.name] = self.args
+            self.parent.write_config_to_file(config)
+
 
     def save_config(self):
         config = self.parent.get_config_from_file()

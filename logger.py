@@ -13,10 +13,9 @@ import quamash
 import asyncio
 import sys
 import struct
-
-#modif Edouard
 import datetime
 
+from qtpy import QtWidgets
 from qtpy.QtWidgets import QApplication
 from .base import ChannelBase, BaseModule
 
@@ -181,7 +180,29 @@ class DataLogger(BaseModule):
     def new_channel(self):
         name = self.get_unique_ch_name()
         self.channels[name] = ChannelLogger(self, name)
+        if self.widget is not None:
+            self.widget.create_channel(self.channels[name])
         return self.channels[name]
+
+    def remove_channel(self, channel):
+        name = channel.name
+        if not name in self.channels:
+            return
+        file_size = osp.getsize(channel.filename)
+        if file_size>0:
+            reply = QtWidgets.QMessageBox.question(None, 'Confirmation',
+            'Are you sure you want to delete the file %s, containing %i data points ?'%(channel.filename, file_size//16)) == QtWidgets.QMessageBox.Yes
+        else:
+            reply = True
+        if reply:
+            os.remove(channel.filename)
+            if self.widget is not None:
+                self.widget.remove_channel(channel)
+            self.channels[name].active = False
+            del self.channels[name]
+            config = self.get_config_from_file()
+            del config['channels'][name]
+            self.write_config_to_file(config)
 
     def get_unique_ch_name(self):
         name = 'new_channel'
