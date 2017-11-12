@@ -1,5 +1,6 @@
 from .logger import DataLogger
 from .plotter import DataPlotter
+from .async_utils import wait
 
 # enable ipython QtGui support if needed
 try:

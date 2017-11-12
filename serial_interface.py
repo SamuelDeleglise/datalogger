@@ -9,7 +9,6 @@ import asyncio
 from serial import SerialException
 
 
-
 def serial_interface_factory(ip_or_port, **kwds):
     """
     Returns either a Wiznet or a Serial object, depending on ip_or_port.
@@ -192,5 +191,3 @@ class SerialInstrument(object):
         self.serial.rtscts = self.rtscts
         self.serial.timeout = self.timeout
         self.serial.xonxoff = self.xonxoff
-
-
