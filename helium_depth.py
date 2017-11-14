@@ -81,6 +81,7 @@ class HeliumDepth(SerialInstrument):
     stopbits = serial.STOPBITS_ONE
     bytesize = 8
     baudrate = 9600
+    CONNECT_DELAY = 0.1
 
     async def ask_level(self):
         string = await self.serial.ask("G")

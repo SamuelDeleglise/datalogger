@@ -180,8 +180,9 @@ class Channel(object):
                     val = self.callback_func()
             except BaseException as e:
                 print(self.name, ':', e)
-            moment = time.time()
-            self.plot_and_save_point(val, moment)
+            else:
+                moment = time.time()
+                self.plot_and_save_point(val, moment)
             await asyncio.sleep(self.delay)
 
     def plot_and_save_point(self, val, moment):
