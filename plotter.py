@@ -30,9 +30,7 @@ app = QApplication(sys.argv)
 
 set_event_loop(quamash.QEventLoop())
 
-
 class FileNotFoundError(ValueError): pass
-
 
 class ChannelPlotter(ChannelBase):
     INDEX = 0
@@ -47,12 +45,9 @@ class ChannelPlotter(ChannelBase):
               '#bcbd22',
               '#17becf']
     #[QtGui.QColor(name).name() for name in QtGui.QColor.colorNames()]
-
     def initialize_attributes(self, name):
         self._visible = False
         self._color = self.COLORS[ChannelPlotter.INDEX%len(ChannelPlotter.COLORS)]
-
-        self._axis_type = "Default"
         ChannelPlotter.INDEX+=1
         #self._name = name
         self.all_dates = []# an ordered list of all existing dates in the data
@@ -111,23 +106,12 @@ class ChannelPlotter(ChannelBase):
         self.save_config()
 
     @property
-    def axis_type(self):
-        return self._axis_type
-
-    @axis_type.setter
-    def axis_type(self, val):
-        self.parent.widget.remove_from_axis(self)
-        self._axis_type = val
-        self.parent.widget.add_to_axis(self)
-        self.save_config()
-
-    @property
     def args(self):
-        return self.visible, self.color, self.axis_type
+        return self.visible, self.color
 
     @args.setter
     def args(self, val):
-        self.visible, self.color , self.axis_type = val
+        self.visible, self.color = val
 
     def load_data(self):
         """Load data from file"""
@@ -285,21 +269,13 @@ class DataPlotter(BaseModule):
     def earliest_point(self):
         return self.latest_point - self.seconds_to_show
 
-    @property
-    def axis_types_list(self):
-        list = []
-        for chan in self.channels.values():
-            if chan.axis_type not in list:
-                list.append(chan.axis_type)
-        return list
-
-
     def save_config(self):
         config = self.get_config_from_file()
         config['days_to_show'] = self.days_to_show
         config['hours_to_show'] = self.hours_to_show
         config['minutes_to_show'] = self.minutes_to_show
         config["show_real_time"] = self.show_real_time
+        #config["selected_date"] = self.selected_date
         self.write_config_to_file(config)
 
     def load_config(self):
@@ -315,6 +291,10 @@ class DataPlotter(BaseModule):
             self.minutes_to_show = config["minutes_to_show"]
         if "show_real_time" in config:
             self.show_real_time = config["show_real_time"]
+        '''
+        if "selected_date" in config:
+            self.selected_date = config["selected_date"]
+        '''
 
     def load_channels(self):
         for val in os.listdir(self.directory):

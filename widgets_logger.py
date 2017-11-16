@@ -51,6 +51,7 @@ class LoggerTree(wb.MyTreeWidget):
     def update(self):
         for channel in self.dlg.channels.values():
             channel.name = str(channel.widget.text(0))
+            #channel.visible = channel.widget.checkState(1) == 2
             channel.active = channel.widget.checkState(1) == 2
             channel.delay = float(channel.widget.text(2))
             channel.callback = str(channel.widget.text(3))
