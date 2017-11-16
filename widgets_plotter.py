@@ -18,6 +18,9 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
         self.plot_item.showGrid(y=True, alpha=1.)
         self.setCentralWidget(self.graph)
 
+        self.axes = dict()
+        self.create_axes()
+
         self._dock_tree = MyDockTreeWidget(dataplotter)
         self.tree = self._dock_tree.tree
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._dock_tree)
@@ -34,6 +37,24 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
     def set_green_days(self):
         self._dock_tree.mycontrolwidget.set_green_days()
 
+    def create_axes(self):
+        for axisname in self.dlg.axis_types_list:
+            self.axes[axisname] = dict()
+            self.axes[axisname][0] = pg.ViewBox()
+            self.axes[axisname][1] = pg.AxisItem("left")
+
+            self.plot_item.layout.addItem(self.axes[axisname][1], 2, 1) #second index influences vertical length, third index influences horizontal position
+            self.plot_item.scene().addItem(self.axes[axisname][0])
+            self.axes[axisname][1].linkToView(self.axes[axisname][0])
+            self.axes[axisname][0].setXLink(self.plot_item)
+            self.axes[axisname][1].setZValue(0)
+            self.axes[axisname][1].setLabel(axisname, color='#ff0000')
+
+    def add_to_axis(self, channel):
+        self.axes[channel.axis_type][0].addItem(pg.PlotCurveItem(channel.times, channel.values), pen=pg.mkPen(color = channel.color))
+
+    def remove_from_axis(self, channel):
+        pass
 
 class PlotterItem(wb.MyTreeItem):
     #COLORS = ['red', 'green', 'blue', 'cyan', 'magenta']
@@ -43,11 +64,21 @@ class PlotterItem(wb.MyTreeItem):
         #self.color = self.COLORS[self.N_CHANNELS % len(self.COLORS)]
         #self.setBackground(0, QtGui.QColor(color))
         self.channel = channel
-        self.curve = self.dlg.widget.plot_item.plot(pen=pg.mkPen(self.channel.color))
+        self.curve = self.dlg.widget.plot_item.plot(pen=pg.mkPen(color = self.channel.color))
         self.plot_points(self.channel.values, self.channel.times)
+
         self.button = QtWidgets.QPushButton(channel.name)
         self.button.clicked.connect(self.ask_color)
         self.dlg.widget.tree.setItemWidget(self, 0, self.button)
+
+        self.axischoice = QtWidgets.QComboBox()
+        self.axischoice.addItems(self.dlg.axis_types_list)
+        self.axischoice.insertItem(len(self.dlg.axis_types_list), "New Axis")
+        self.axischoice.setCurrentIndex(self.get_axis_type_index(channel))
+        #self.axischoice.currentIndexChanged.connect(self.update_axes)
+        self.axischoice.currentIndexChanged.connect(self.update_axes)
+        self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
+
         self.set_color(self.channel.color)
 
     def ask_color(self):
@@ -61,7 +92,6 @@ class PlotterItem(wb.MyTreeItem):
 
         self.values = [val for val in vals[time_span]]
         self.times = [time for time in times[time_span]]
-
         if self.channel.visible:
             self.curve.setData(self.times, self.values)
         self.curve.setVisible(self.channel.visible)
@@ -72,14 +102,27 @@ class PlotterItem(wb.MyTreeItem):
         qt_color.setNamedColor(color)
         self.curve.setPen(pg.mkPen(qt_color))
 
+    def get_axis_type_index(self, channel):
+        return self.dlg.axis_types_list.index(channel.axis_type)
+
+    def update_axes(self, index):
+        if index == len(self.dlg.axis_types_list):
+            self.make_new_axis()
+        else:
+            self.channel.axis_type = self.dlg.axis_types_list(index)
+
+    def make_new_axis(self):
+        pass
+
 
 class PlotterTree(wb.MyTreeWidget):
     item_class = PlotterItem
 
     def __init__(self, dataplotter):
         super(wb.MyTreeWidget, self).__init__()
-        self.setHeaderLabels(["Channel", "Visible"])
-        self.setColumnCount(2)
+        labels = ["Channel", "Visible", "Axis Type"]
+        self.setHeaderLabels(labels)
+        self.setColumnCount( len(labels) )
         self.dlg = dataplotter
         self.itemChanged.connect(self.update)
         self.setSortingEnabled(True)
@@ -87,6 +130,7 @@ class PlotterTree(wb.MyTreeWidget):
     def update(self):
         for channel in self.dlg.channels.values():
             channel.visible = channel.widget.checkState(1) == 2
+            #channel.axis_type =
 
 
 class MyControlWidget(QtWidgets.QWidget):
