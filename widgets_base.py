@@ -46,8 +46,6 @@ class MyTreeWidget(QtWidgets.QTreeWidget):
 
 
 class TimeAxisItem(pg.AxisItem):
-    def __init__(self, *args, **kwargs):
-        super(TimeAxisItem, self).__init__(*args, **kwargs)
 
     def tickStrings(self, values, scale, spacing):
         # PySide's QTime() initialiser fails miserably and dismisses args/kwargs

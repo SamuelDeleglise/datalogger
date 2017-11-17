@@ -367,4 +367,10 @@ class DataPlotter(BaseModule):
         for channel in self.channels.values():
             channel.plot_data()
         if self.widget is not None:
-            self.widget.plot_item.setXRange(self.earliest_point, self.latest_point)
+            '''
+            plots points at the beginning and the end of the selected plot, but does not connect them, to force the 
+            plotItem to show the correct time interval. It would otherwise snap to [0,1]
+            '''
+            self.widget.plot_item.clear()
+            self.widget.plot_item.plot([self.earliest_point, self.earliest_point,
+                                 self.latest_point, self.latest_point], [0, 0, 0, 0], connect='pairs')
