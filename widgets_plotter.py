@@ -32,6 +32,7 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
         self.plot_item.scene().addItem(self.time_axis_holder)
         self.time_axis.linkToView(self.time_axis_holder)
         self.time_axis.setLabel('time', color='#ff0000')
+        #self.time_axis_holder.autoRange()
 
         self.axes = dict()
         self.update_axes()
@@ -63,7 +64,7 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
                 view_box = self.axes[axis_name][0]
                 axis_item = self.axes[axis_name][1]
 
-                self.plot_item.layout.addItem(axis_item, 2, 2) #second index influences vertical length, third index influences horizontal position
+                self.plot_item.layout.addItem(axis_item, 2, self.dlg.axis_types_list.index(axis_name)) #second index influences vertical length, third index influences horizontal position
                 self.plot_item.scene().addItem(view_box)
                 axis_item.linkToView(view_box)
                 view_box.setXLink(self.time_axis_holder)
@@ -82,15 +83,12 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
             ## incorrectly while views had different shapes.
             view_box.linkedViewChanged(self.plot_item.vb, view_box.XAxis)
 
-    def add_to_axis(self, channel):
-        self.axes[channel.axis_type][0].addItem(channel.curve)
+    def add_to_axis(self, plotter_item):
+        self.axes[plotter_item.channel.axis_type][0].addItem(plotter_item.curve)
         pass
 
-    def remove_from_axis(self, channel):
-        self.axes[channel.axis_type][0].removeItem(channel.curve)
-        pass
-
-    def create_new_axis(self, channel, new_axis_name):
+    def remove_from_axis(self, plotter_item):
+        self.axes[plotter_item.channel.axis_type][0].removeItem(plotter_item.curve)
         pass
 
 
@@ -114,7 +112,8 @@ class PlotterItem(wb.MyTreeItem):
 
         self.axischoice = QtWidgets.QComboBox()
         self.axischoice.addItems(self.dlg.axis_types_list)
-        self.axischoice.insertItem(len(self.dlg.axis_types_list), "New Axis...")
+        self.new_axis_text = "New Axis..."
+        self.axischoice.addItem(self.new_axis_text)
         self.axischoice.setCurrentIndex(self.get_axis_type_index(channel))
         #self.axischoice.currentIndexChanged.connect(self.update_axes)
         self.axischoice.currentIndexChanged.connect(self.update_axes)
@@ -154,20 +153,35 @@ class PlotterItem(wb.MyTreeItem):
         return self.dlg.axis_types_list.index(channel.axis_type)
 
     def update_axes(self, index):
-        if index == len(self.dlg.axis_types_list):
-            self.dlg.widget.remove_from_axis(channel)
-            self.channel.axis_type = self.make_new_axis()
-            self.dlg.widget.add_to_axis(channel)
+        choice = str(self.axischoice.currentText())
+        self.dlg.widget.remove_from_axis(self)
+        if choice == self.new_axis_text:
+            new_name = self.make_new_axis()
+            if new_name is not None:
+                self.channel.axis_type = new_name
+                self.axischoice.insertItem(len(self.dlg.axis_types_list), self.channel.axis_type)
         else:
-            self.dlg.widget.remove_from_axis(channel)
-            self.channel.axis_type = self.dlg.axis_types_list(index)
-            self.dlg.widget.add_to_axis(channel)
+            self.channel.axis_type = choice
+
+        self.dlg.widget.update_axes()
+        self.dlg.widget.add_to_axis(self)
+        self.update_combo_box()
+
+    def update_combo_box(self):
+        self.combobox.blockSignals(True)
+        self.combobox.clear()
+        self.axischoice.addItems(self.dlg.axis_types_list)
+        self.axischoice.addItem(self.new_axis_text)
+        self.axischoice.setCurrentIndex(self.get_axis_type_index(self.channel))
+        self.combobox.blockSignals(False)
 
     def make_new_axis(self):
         new_name, ok = QtWidgets.QInputDialog.getText(None, "New Axis Name:", "NewAxis", QtWidgets.QLineEdit.Normal, "")
-        if ok:
-            self.dlg.widget.create_new_axis(self, new_name)
+        if ok and new_name is not '':
+            self.channel.parent.axis_types_list.append(new_name)
             return new_name
+        else:
+            return None
 
 
 class PlotterTree(wb.MyTreeWidget):

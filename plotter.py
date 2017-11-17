@@ -323,6 +323,8 @@ class DataPlotter(BaseModule):
         for chan in self.channels.values():
             if chan.axis_type not in list:
                 list.append(chan.axis_type)
+                if hasattr(chan, "widget") and hasattr(chan.widget, "combobox"):
+                    chan.widget.update_combo_box()
         return list
 
 
