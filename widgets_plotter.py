@@ -8,6 +8,8 @@ import os.path as osp
 
 
 class DataPlotterWidget(QtWidgets.QMainWindow):
+    new_axes_created = QtCore.Signal()
+
     def __init__(self, dataplotter):
         super(DataPlotterWidget, self).__init__()
         self.setWindowTitle('DataPlotter')
@@ -120,6 +122,7 @@ class PlotterItem(wb.MyTreeItem):
         self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
 
         self.set_color(self.channel.color)
+        self.dlg.widget.new_axes_created.connect(self.update_combo_box)
 
     def ask_color(self):
         color = QtGui.QColor()
@@ -159,6 +162,7 @@ class PlotterItem(wb.MyTreeItem):
             new_name = self.make_new_axis()
             if new_name is not None:
                 self.channel.axis_type = new_name
+                self.dlg.widget.new_axes_created.emit()
                 #self.axischoice.insertItem(len(self.dlg.axis_types_list), self.channel.axis_type)
         else:
             self.channel.axis_type = choice
@@ -166,18 +170,19 @@ class PlotterItem(wb.MyTreeItem):
         self.dlg.widget.update_axes()
         self.dlg.widget.add_to_axis(self)
 
-        self.update_combo_box()
+        #self.update_combo_box()
 
     def update_combo_box(self):
         #updates the comboboxes of all the channels
-        for chan in self.parent.channels.values():
-            chan.axischoice.blockSignals(True)
-            for i in range (0, chan.axischoice.count()):
-                chan.axischoice.removeItem(i)
-            chan.axischoice.addItems(chan.dlg.axis_types_list)
-            chan.axischoice.addItem(chan.new_axis_text)
-            chan.axischoice.setCurrentIndex(chan.axischoice.findText(chan.channel.axis_type))
-            chan.axischoice.blockSignals(False)
+        for chan in self.dlg.channels.values():
+            combo = chan.widget.axischoice
+            combo.blockSignals(True)
+            for i in range (0, combo.count()):
+                combo.removeItem(0)
+            combo.addItems(self.dlg.axis_types_list)
+            combo.addItem(self.new_axis_text)
+            combo.setCurrentIndex(combo.findText(chan.axis_type))
+            combo.blockSignals(False)
 
     def make_new_axis(self):
         new_name, ok = QtWidgets.QInputDialog.getText(None, "New Axis Name:", "NewAxis", QtWidgets.QLineEdit.Normal, "")
