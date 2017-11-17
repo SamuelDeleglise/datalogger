@@ -33,6 +33,23 @@ set_event_loop(quamash.QEventLoop())
 
 class FileNotFoundError(ValueError): pass
 
+import os
+
+def read_tail(filename, n_floats=64):
+    """a generator that returns the last floats of a file in reverse order"""
+    with open(filename, 'rb') as fh:
+        segment = None
+        offset = 0
+        fh.seek(0, os.SEEK_END)
+        file_size = remaining_size = fh.tell()
+        tail_size = n_floats*8 # size of float64
+        while remaining_size > 0:
+            offset = min(file_size, offset + tail_size)
+            fh.seek(file_size - offset)
+            buffer = fh.read(min(remaining_size, tail_size))
+            remaining_size -= tail_size
+            yield np.frombuffer(buffer, dtype=float)
+
 
 class ChannelPlotter(ChannelBase):
     INDEX = 0
@@ -59,7 +76,8 @@ class ChannelPlotter(ChannelBase):
 
         self.change_detector = QtCore.QFileSystemWatcher()
         self.change_detector.addPath(self.filename)
-        self.change_detector.fileChanged.connect(self.load_and_plot_data)
+        self.change_detector.fileChanged.connect(
+            self.load_last_points_and_plot)
 
     def set_curve_visible(self, val):
         # ignores the visibility toggle until the widget attr has been successfully loaded
@@ -138,6 +156,8 @@ class ChannelPlotter(ChannelBase):
             raise FileNotFoundError("No file named " + str(self.filename))
 
     def find_intermediate_dates(self, index_start, index_end):
+        if index_end - index_start<=1:
+            return
         date_start = date.fromtimestamp(self.times[index_start])
         date_end = date.fromtimestamp(self.times[index_end])
         index_intermediate = (index_start + index_end)//2
@@ -161,9 +181,23 @@ class ChannelPlotter(ChannelBase):
         self.find_intermediate_dates(0, len(self.times)-1)
         return self.all_dates
 
-    def load_and_plot_data(self):
+    def load_last_points(self):
+        all_times = []
+        all_vals = []
+        for table in read_tail(self.filename):
+            times = table[::2]
+            vals = table[1::2]
+            all_times = np.concatenate((times, all_times))
+            all_vals = np.concatenate((vals, all_vals))
+            if times[0]<self.times[-1]: # already past the previous point
+                mask = all_times>self.times[-1]
+                self.times = np.concatenate((self.times, all_times[mask]))
+                self.values = np.concatenate((self.values, all_vals[mask]))
+                return
+
+    def load_last_points_and_plot(self):
         """Load data from file"""
-        self.load_data()
+        self.load_last_points()
         self.plot_data()
 
         if not date.fromtimestamp(self.times[-1]) in self.parent.all_dates:
