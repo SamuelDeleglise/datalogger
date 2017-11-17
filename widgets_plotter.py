@@ -114,8 +114,8 @@ class PlotterItem(wb.MyTreeItem):
         self.axischoice.addItems(self.dlg.axis_types_list)
         self.new_axis_text = "New Axis..."
         self.axischoice.addItem(self.new_axis_text)
-        self.axischoice.setCurrentIndex(self.get_axis_type_index(channel))
-        #self.axischoice.currentIndexChanged.connect(self.update_axes)
+        self.axischoice.setCurrentIndex(self.axischoice.findText(self.channel.axis_type))
+        #self.axischoice.setCurrentIndex(self.get_axis_type_index(channel))
         self.axischoice.currentIndexChanged.connect(self.update_axes)
         self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
 
@@ -159,21 +159,25 @@ class PlotterItem(wb.MyTreeItem):
             new_name = self.make_new_axis()
             if new_name is not None:
                 self.channel.axis_type = new_name
-                self.axischoice.insertItem(len(self.dlg.axis_types_list), self.channel.axis_type)
+                #self.axischoice.insertItem(len(self.dlg.axis_types_list), self.channel.axis_type)
         else:
             self.channel.axis_type = choice
 
         self.dlg.widget.update_axes()
         self.dlg.widget.add_to_axis(self)
+
         self.update_combo_box()
 
     def update_combo_box(self):
-        self.combobox.blockSignals(True)
-        self.combobox.clear()
-        self.axischoice.addItems(self.dlg.axis_types_list)
-        self.axischoice.addItem(self.new_axis_text)
-        self.axischoice.setCurrentIndex(self.get_axis_type_index(self.channel))
-        self.combobox.blockSignals(False)
+        #updates the comboboxes of all the channels
+        for chan in self.parent.channels.values():
+            chan.axischoice.blockSignals(True)
+            for i in range (0, chan.axischoice.count()):
+                chan.axischoice.removeItem(i)
+            chan.axischoice.addItems(chan.dlg.axis_types_list)
+            chan.axischoice.addItem(chan.new_axis_text)
+            chan.axischoice.setCurrentIndex(chan.axischoice.findText(chan.channel.axis_type))
+            chan.axischoice.blockSignals(False)
 
     def make_new_axis(self):
         new_name, ok = QtWidgets.QInputDialog.getText(None, "New Axis Name:", "NewAxis", QtWidgets.QLineEdit.Normal, "")
