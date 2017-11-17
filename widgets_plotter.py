@@ -46,7 +46,6 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
         self._dock_tree.mycontrolwidget.set_green_days()
 
     def update_axes(self):
-        iterno=0
         '''
         plots points at the beginning and the end of the selected plot, but does not connect them, to force the 
         plotItem to show the correct time interval. It would otherwise snap to [0,1]
@@ -54,31 +53,39 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
         self.plot_item.clear()
         self.plot_item.plot( [self.dlg.earliest_point, self.dlg.earliest_point,
                                           self.dlg.latest_point, self.dlg.latest_point], [0, 0, 0, 0], connect='pairs')
+        #first clears all axes from before
+        for axis_name in self.axes.keys():
+            self.axes[axis_name][0].scene().removeItem(self.axes[axis_name][1])
+            print(axis_name + ' removed')
+        #self.plot_item.clear() #clear does not destroy AxisItems
+        self.axes = dict()
+        print(self.dlg.axis_types_list)
+        iterno = 0
         for axis_name in self.dlg.axis_types_list:
             if axis_name not in self.axes:
+                '''
                 if iterno%2:
-                    place="right"
+                    place = "right"
                 else:
-                    place="left"
-
-                self.axes[axis_name] = dict()
-                self.axes[axis_name][0] = pg.ViewBox()
-                self.axes[axis_name][1] = pg.AxisItem(place)
+                    place = "left"
+                '''
+                self.axes[axis_name] = {0:pg.ViewBox(), 1:pg.AxisItem("left")}
                 view_box = self.axes[axis_name][0]
                 axis_item = self.axes[axis_name][1]
 
-                self.plot_item.layout.addItem(axis_item, 2, iterno) #second index influences vertical length, third index influences horizontal position
+                self.plot_item.layout.addItem(axis_item, 2, 2*iterno) #second index influences vertical length, third index influences horizontal position
                 self.plot_item.scene().addItem(view_box)
                 axis_item.linkToView(view_box)
                 view_box.setXLink(self.plot_item)
                 #view_box.setZValue(0)
                 axis_item.setLabel(axis_name, color='#ff0000')
-                iterno+=1
+                iterno += 1
+                print(axis_name + ' added')
         self.update_views()
 
     def update_views(self):
         for axis_name in self.axes:
-            view_box =  self.axes[axis_name][0]
+            view_box = self.axes[axis_name][0]
             view_box.setGeometry(self.plot_item.vb.sceneBoundingRect())
             view_box.linkedViewChanged(self.plot_item.vb, view_box.XAxis)
 
@@ -108,7 +115,6 @@ class PlotterItem(wb.MyTreeItem):
         self.new_axis_text = "New Axis..."
         self.axischoice.addItem(self.new_axis_text)
         self.axischoice.setCurrentIndex(self.axischoice.findText(self.channel.axis_type))
-        #self.axischoice.setCurrentIndex(self.get_axis_type_index(channel))
         self.axischoice.currentIndexChanged.connect(self.update_axes)
         self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
 
