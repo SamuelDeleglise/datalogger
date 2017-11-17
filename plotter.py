@@ -116,9 +116,7 @@ class ChannelPlotter(ChannelBase):
 
     @axis_type.setter
     def axis_type(self, val):
-        self.parent.widget.remove_from_axis(self)
         self._axis_type = val
-        self.parent.widget.add_to_axis(self)
         self.save_config()
 
     @property

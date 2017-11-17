@@ -9,6 +9,7 @@ from . import widgets_base as wb
 class DataLoggerWidget(QtWidgets.QMainWindow):
     def __init__(self, datalogger):
         super(DataLoggerWidget, self).__init__()
+        self.setWindowTitle('DataLogger')
         self.current_channel_index = -1
         self.dlg = datalogger
 
