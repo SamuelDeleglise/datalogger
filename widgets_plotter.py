@@ -21,7 +21,6 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
             'bottom': wb.TimeAxisItem(orientation='bottom')})
 
         self.plot_item.setLabels(bottom='time')
-
         self.plot_item.hideAxis('left')
         self.setCentralWidget(self.graph)
 
@@ -54,21 +53,21 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
         self.plot_item.plot( [self.dlg.earliest_point, self.dlg.earliest_point,
                                           self.dlg.latest_point, self.dlg.latest_point], [0, 0, 0, 0], connect='pairs')
         #first clears all axes from before
+        axes_to_delete  = []
         for axis_name in self.axes.keys():
-            self.axes[axis_name][0].scene().removeItem(self.axes[axis_name][1])
+            if axis_name not in self.dlg.axis_types_list:
+                self.axes[axis_name][0].scene().removeItem(self.axes[axis_name][1])
+                axes_to_delete.append(axis_name)
+        for axis_name in axes_to_delete:
+            del self.axes[axis_name]
             print(axis_name + ' removed')
+
         #self.plot_item.clear() #clear does not destroy AxisItems
-        self.axes = dict()
+        #self.axes = dict()
         print(self.dlg.axis_types_list)
         iterno = 0
         for axis_name in self.dlg.axis_types_list:
             if axis_name not in self.axes:
-                '''
-                if iterno%2:
-                    place = "right"
-                else:
-                    place = "left"
-                '''
                 self.axes[axis_name] = {0:pg.ViewBox(), 1:pg.AxisItem("left")}
                 view_box = self.axes[axis_name][0]
                 axis_item = self.axes[axis_name][1]
@@ -105,20 +104,22 @@ class PlotterItem(wb.MyTreeItem):
 
         self.curve = pg.PlotDataItem(pen=pg.mkPen(color=self.channel.color))
         self.plot_points(channel.values, channel.times)
-
         self.button = QtWidgets.QPushButton(channel.name)
-        self.button.clicked.connect(self.ask_color)
         self.dlg.widget.tree.setItemWidget(self, 0, self.button)
+        self.dlg.widget.add_to_axis(self)
+
 
         self.axischoice = QtWidgets.QComboBox()
         self.axischoice.addItems(self.dlg.axis_types_list)
         self.new_axis_text = "New Axis..."
         self.axischoice.addItem(self.new_axis_text)
         self.axischoice.setCurrentIndex(self.axischoice.findText(self.channel.axis_type))
-        self.axischoice.currentIndexChanged.connect(self.update_axes)
-        self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
 
+        self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
         self.set_color(self.channel.color)
+
+        self.axischoice.currentIndexChanged.connect(self.update_axes)
+        self.button.clicked.connect(self.ask_color)
         self.dlg.widget.new_axes_created.connect(self.update_combo_box)
 
     def ask_color(self):
