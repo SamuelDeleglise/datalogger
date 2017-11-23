@@ -60,11 +60,7 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
                 axes_to_delete.append(axis_name)
         for axis_name in axes_to_delete:
             del self.axes[axis_name]
-            print(axis_name + ' removed')
 
-        #self.plot_item.clear() #clear does not destroy AxisItems
-        #self.axes = dict()
-        print(self.dlg.axis_types_list)
         iterno = 0
         for axis_name in self.dlg.axis_types_list:
             if axis_name not in self.axes:
@@ -76,10 +72,8 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
                 self.plot_item.scene().addItem(view_box)
                 axis_item.linkToView(view_box)
                 view_box.setXLink(self.plot_item)
-                #view_box.setZValue(0)
                 axis_item.setLabel(axis_name, color='#ff0000')
                 iterno += 1
-                print(axis_name + ' added')
         self.update_views()
 
     def update_views(self):
@@ -108,15 +102,19 @@ class PlotterItem(wb.MyTreeItem):
         self.dlg.widget.tree.setItemWidget(self, 0, self.button)
         self.dlg.widget.add_to_axis(self)
 
-
         self.axischoice = QtWidgets.QComboBox()
         self.axischoice.addItems(self.dlg.axis_types_list)
         self.new_axis_text = "New Axis..."
         self.axischoice.addItem(self.new_axis_text)
         self.axischoice.setCurrentIndex(self.axischoice.findText(self.channel.axis_type))
-
         self.dlg.widget.tree.setItemWidget(self, 2, self.axischoice)
+
         self.set_color(self.channel.color)
+
+        self.compare_checkbox = QtWidgets.QCheckBox()
+        if channel.comparison_time is None:
+            self.compare_checkbox.setDisabled(True)
+        self.dlg.widget.tree.setItemWidget(self, 3, self.compare_checkbox)
 
         self.axischoice.currentIndexChanged.connect(self.update_axes)
         self.button.clicked.connect(self.ask_color)
@@ -159,14 +157,11 @@ class PlotterItem(wb.MyTreeItem):
             if new_name is not None:
                 self.channel.axis_type = new_name
                 self.dlg.widget.new_axes_created.emit()
-                #self.axischoice.insertItem(len(self.dlg.axis_types_list), self.channel.axis_type)
         else:
             self.channel.axis_type = choice
 
         self.dlg.widget.update_axes()
         self.dlg.widget.add_to_axis(self)
-
-        #self.update_combo_box()
 
     def update_combo_box(self):
         #updates the comboboxes of all the channels
@@ -194,7 +189,7 @@ class PlotterTree(wb.MyTreeWidget):
 
     def __init__(self, dataplotter):
         super(wb.MyTreeWidget, self).__init__()
-        labels = ["Channel", "Visible", "Axis Type"]
+        labels = ["Channel", "Visible", "Axis Type", "Show Comparison", "Set Comparison"]
         self.setHeaderLabels(labels)
         self.setColumnCount( len(labels) )
         self.dlg = dataplotter
@@ -204,7 +199,6 @@ class PlotterTree(wb.MyTreeWidget):
     def update(self):
         for channel in self.dlg.channels.values():
             channel.visible = channel.widget.checkState(1) == 2
-            #channel.axis_type =
 
 
 class MyControlWidget(QtWidgets.QWidget):

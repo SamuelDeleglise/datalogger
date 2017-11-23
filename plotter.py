@@ -69,7 +69,8 @@ class ChannelPlotter(ChannelBase):
         self._visible = False
         self._color = self.COLORS[ChannelPlotter.INDEX%len(ChannelPlotter.COLORS)]
 
-        self._axis_type = "Default"
+        self._axis_type = "Defaultt"
+        self._comparison_time = None
         ChannelPlotter.INDEX+=1
         #self._name = name
         self.all_dates = []# an ordered list of all existing dates in the data
@@ -137,6 +138,14 @@ class ChannelPlotter(ChannelBase):
         self._axis_type = val
         dummy = self.parent.axis_types_list #force the update of the list
         self.save_config()
+
+    @property
+    def comparison_time(self):
+        return self._comparison_time
+
+    @comparison_time.setter
+    def comparison_time(self):
+        self._comparison_time = self.comparison_time
 
     @property
     def args(self):
