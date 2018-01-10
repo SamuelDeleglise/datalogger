@@ -7,6 +7,7 @@ import quamash
 import asyncio
 
 from serial import SerialException
+from async_utils import wait
 
 
 def serial_interface_factory(ip_or_port, **kwds):
@@ -31,6 +32,9 @@ class SerialInterface(object):
 
     async def ask(self, val):
         raise NotImplementedError("To implement in a derived class")
+
+    def ask_sync(self, val):
+        return wait(self.ask(val))
 
 
 class SerialConnection(SerialInterface):
@@ -79,6 +83,9 @@ class SerialConnection(SerialInterface):
             except SerialException as e:
                 continue
         raise ValueError("Failed to connect after %i retries" % self.N_RETRIES)
+
+
+
 
 
 class Wiznet(SerialInterface):

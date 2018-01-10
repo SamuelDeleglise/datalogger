@@ -19,7 +19,8 @@ class SerialFromEthernet(object):
         except socket.error:
             print("could not connect to ip:" + str(ip))
         else:
-            self.socket.setblocking(True)
+            pass
+            #self.socket.setblocking(True)
 
         #self.socket.settimeout(1)
 
@@ -42,8 +43,8 @@ class SerialFromEthernet(object):
             try:
                 char = self.socket.recv(1)
                 st += char.decode("utf-8")
-            except socket.error:
-                pass
+            except socket.timeout:
+                return st
                 #print('error')
                 #return st
         return st

@@ -165,8 +165,17 @@ class CryoCon(SerialInstrument):
         if val:
             await self.serial.write("CONTROL ON")
         else:
-            self.stop_control()
+            await self.stop_control()
 
     async def stop_control(self):
         await self.serial.write("STOP")
+
+    async def loop_source(self):
+        return await self.serial.ask("LOOP 2:SOURCE?")
+
+    async def loop_setpoint(self, val):
+        await self.serial.write("LOOP 2:SETPT "+str(val))
+
+    async def loop_type(self):
+        return await self.serial.ask("LOOP 2:TYPE?")
 
