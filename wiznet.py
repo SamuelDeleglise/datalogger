@@ -4,7 +4,7 @@ import socket
 class SerialFromEthernet(object):
     """
     This object can be either a Wiznet converting Ethernet socket commands
-    into serial commands or a simple Serail connection. In any case,
+    into serial commands or a simple Serial connection. In any case,
     the connection is "normally-closed" between blocking function calls.
     """
     TCP_PORT = 5000
