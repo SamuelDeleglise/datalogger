@@ -281,7 +281,7 @@ class Camera:
         res = np.reshape(grey, [self.height, self.width])
         return res
 
-    def get_picture_bgr(self):
+    def get_picture_rgba(self):
         self.wait_For_Next_Image(3000, ct.pointer(self.pcMem), ct.pointer(self.imageID))
         self.lock_seq_buf()
         data = ct.string_at(self.pcMem, self.height*self.increment.value*ct.sizeof(ct.c_char))
@@ -289,16 +289,20 @@ class Camera:
         red = np.reshape(np.frombuffer(data[0::4], dtype=np.byte),[self.height, self.width])
         green = np.reshape(np.frombuffer(data[1::4], dtype=np.byte),[self.height, self.width])
         blue = np.reshape(np.frombuffer(data[2::4], dtype=np.byte), [self.height, self.width])
-        buffer = np.reshape(np.frombuffer(data[3::4], dtype=np.byte), [self.height, self.width])
-        return blue, green, red, buffer
+        alpha = np.reshape(np.frombuffer(data[3::4], dtype=np.byte), [self.height, self.width])
+        return red, green, blue, alpha
 
     def get_cv2_format_image(self):
-        b, g, r, buf = self.get_picture_bgr()
-        res = np.empty([self.height, self.width, 4])
-        res[:,:,0] = b/32.
-        res[:,:,1] = g/32.
-        res[:,:,2] = r/32.
-        res[:,:,3] = buf/32.
+        # image format: RGBA8_PACKED. Corresponds to bgr in cv2. Returns the numbers in 'uint8' type, supported by
+        # the contrats detection code of pyinsturments
+        r, g, b, a = self.get_picture_rgba()
+        res = np.empty([self.height, self.width, 4]).astype('int8')
+        factor = 8
+        res[:, :, 0] = b*factor
+        res[:, :, 1] = g*factor
+        res[:, :, 2] = r*factor
+        res[:, :, 3] = a*factor
+        res = res[:, :, :3].astype('uint8')  # not sure why, but certainly need to remove a to analyse contrasts.
         return res
 
     def get_color_mode(self):
