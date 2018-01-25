@@ -6,14 +6,15 @@ from asyncio import Future, ensure_future, CancelledError, \
     set_event_loop, TimeoutError
 import quamash
 import asyncio
+import warnings
 
-#from .wiznet import SerialFromEthernet
+# from .wiznet import SerialFromEthernet
 from .async_utils import wait
 from .serial_interface import SerialInstrument
 
 
 class Attocube(object):
-#made from scratch without using serial-interface due to its unique format (multiple lined responses)
+# made from scratch without using serial-interface due to its unique format (multiple lined responses)
     linebreak = '\r\n'
     prompt = '> '  # some instruments also reply with a prompt after the linebreak, such as >
     timeout = 2
@@ -32,15 +33,27 @@ class Attocube(object):
 
         self.a = MultilineWiznet(self.ip, self.parameters)
 
-        for index in (1,2,3):
+        for index in (1, 2, 3):
             self.a.ask_sync("setm %i stp\r\n"%index)
 
     def steps(self, ax, numsteps):
         ''' Advances by numsteps along the given axis ax.
         The axes are indicated on the attocube generator '''
-        #note: exists command for faster
-        string = "stepd" if numsteps<0 else "stepu"
-        self.a.ask_sync("%s %i %i"%(string, ax, abs(numsteps)))
+        # note: exists command for faster, not implemented
+        directions = ['x', 'y', 'z']
+
+        if ax not in directions:
+            warnings.warn("Direction asked for doesn't exists")
+            pass
+        else:
+            if ax == 'x':
+                dir = 1
+            if ax == 'y':
+                dir = 3
+            if ax == 'z':
+                dir = 2
+            string = "stepd" if numsteps < 0 else "stepu"
+            self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
 
 
 class MultilineWiznet(object):
@@ -48,10 +61,10 @@ class MultilineWiznet(object):
     a serial interface includes a function "ask"
     """
     CONNECT_DELAY = 0.1
-    #SEND_DELAY = 0.1
-    #CLOSE_DELAY = 0.1
+    # SEND_DELAY = 0.1
+    # CLOSE_DELAY = 0.1
     PORT = 5000
-    N_RETRIES = 10
+    N_RETRIES = 50
 
     def __init__(self, ip, parameters):
         self.ip = ip
