@@ -292,7 +292,7 @@ class Camera:
         alpha = np.reshape(np.frombuffer(data[3::4], dtype=np.byte), [self.height, self.width])
         return red, green, blue, alpha
 
-    def get_cv2_format_image(self):
+    def get_pciture_cv2_format(self):
         # image format: RGBA8_PACKED. Corresponds to bgr in cv2. Returns the numbers in 'uint8' type, supported by
         # the contrats detection code of pyinsturments
         r, g, b, a = self.get_picture_rgba()
