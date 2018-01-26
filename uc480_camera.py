@@ -89,6 +89,7 @@ class uc480_CAPTURE_STATUS_INFO(ct.Structure):
 class Camera:
 
     def __init__(self, width, height):
+        self.IS_IGNORE_PARAMETER = -1
         self.IS_SET_CM_RGB32 = 0
         self.IS_CM_ORDER_RGB = 0x0080
         self.IS_CM_FORMAT_PACKED = 0x0000
@@ -142,7 +143,7 @@ class Camera:
         self.get_line_increment(ct.pointer(self.increment))
         self.set_trigger_mode(self.IS_SET_TRIGGER_SOFTWARE)
         self.add_to_sequence()
-        self.init_Image_Queue()
+        #self.init_Image_Queue()
         self.imageID = ct.c_int()
 
         self.number_of_image_formats = ct.c_uint()
@@ -263,17 +264,22 @@ class Camera:
 
     def unlock_seq_buf(self):
         res = self.dll.is_UnlockSeqBuf(self.camera_handle, self.imageID, self.pcMem)
+        #res = self.dll.is_UnlockSeqBuf(self.camera_handle, self.IS_IGNORE_PARAMETER, self.pcMem)
         assert res==0, 'is_UnlockSeqBuf res='+str(res)
 
     def lock_seq_buf(self):
         res = self.dll.is_LockSeqBuf(self.camera_handle, self.imageID, self.pcMem)
+        # res = self.dll.is_LockSeqBuf(self.camera_handle, self.IS_IGNORE_PARAMETER, self.pcMem)
         assert res==0, 'is_LockSeqBuf res='+str(res)
 
     def get_picture(self):
+        self.init_Image_Queue()
+        self.pcMem = ct.pointer((ct.c_char*((self.width*np.int((self.color_depth.value+7)/8)+self.adjust)*self.height))())
         self.wait_For_Next_Image(3000, ct.pointer(self.pcMem), ct.pointer(self.imageID))
-        self.lock_seq_buf()
-        data = ct.string_at(self.pcMem, self.height*self.increment.value*ct.sizeof(ct.c_char))
         self.unlock_seq_buf()
+        self.exit_image_queue()
+        data = ct.string_at(self.pcMem, self.height*self.increment.value*ct.sizeof(ct.c_char))
+
         red = np.frombuffer(data[0::4], dtype=np.byte)
         green = np.frombuffer(data[1::4], dtype=np.byte)
         blue = np.frombuffer(data[2::4], dtype=np.byte)
@@ -282,10 +288,13 @@ class Camera:
         return res
 
     def get_picture_rgba(self):
+        self.init_Image_Queue()
+        self.pcMem = ct.pointer((ct.c_char*((self.width*np.int((self.color_depth.value+7)/8)+self.adjust)*self.height))())
         self.wait_For_Next_Image(3000, ct.pointer(self.pcMem), ct.pointer(self.imageID))
-        self.lock_seq_buf()
-        data = ct.string_at(self.pcMem, self.height*self.increment.value*ct.sizeof(ct.c_char))
         self.unlock_seq_buf()
+        self.exit_image_queue()
+        data = ct.string_at(self.pcMem, self.height*self.increment.value*ct.sizeof(ct.c_char))
+
         red = np.reshape(np.frombuffer(data[0::4], dtype=np.byte),[self.height, self.width])
         green = np.reshape(np.frombuffer(data[1::4], dtype=np.byte),[self.height, self.width])
         blue = np.reshape(np.frombuffer(data[2::4], dtype=np.byte), [self.height, self.width])
@@ -311,3 +320,7 @@ class Camera:
     def set_color_mode(self, val):
         res = self.dll.is_SetColorMode(self.camera_handle, val)
         assert res==0, 'is_SetColorMode res='+str(res)
+
+    def exit_image_queue(self):
+        res = self.dll.is_ExitImageQueue(self.camera_handle)
+        assert res==0, 'is_ExitImageQueue res='+str(res)
