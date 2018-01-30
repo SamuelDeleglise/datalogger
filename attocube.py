@@ -7,14 +7,19 @@ from asyncio import Future, ensure_future, CancelledError, \
 import quamash
 import asyncio
 import warnings
+import time
 
 # from .wiznet import SerialFromEthernet
 from .async_utils import wait
 from .serial_interface import SerialInstrument
 
 
+class FalseAttocubeReplyError(Exception):
+    pass
+
+
 class Attocube(object):
-# made from scratch without using serial-interface due to its unique format (multiple lined responses)
+    # made from scratch without using serial-interface due to its unique format (multiple lined responses)
     linebreak = '\r\n'
     prompt = '> '  # some instruments also reply with a prompt after the linebreak, such as >
     timeout = 2
@@ -30,6 +35,8 @@ class Attocube(object):
     def __init__(self, ip, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
         self.parameters = {"linebreak": "\r\n", "prompt": '> '}
+        self.axes = ['x', 'z', 'y']  # must be arranged in the same order as the axes on the attocube driver
+        # self.direction_flip = [-1, 1, -1]  # added manually to make directions correspond with the desired image
 
         self.a = MultilineWiznet(self.ip, self.parameters)
 
@@ -40,20 +47,19 @@ class Attocube(object):
         ''' Advances by numsteps along the given axis ax.
         The axes are indicated on the attocube generator '''
         # note: exists command for faster, not implemented
-        directions = ['x', 'y', 'z']
 
-        if ax not in directions:
+        if ax not in self.axes:
             warnings.warn("Direction asked for doesn't exists")
             pass
         else:
-            if ax == 'x':
-                dir = 1
-            if ax == 'y':
-                dir = 3
-            if ax == 'z':
-                dir = 2
+            dir = self.axes.index(ax) + 1
+
             string = "stepd" if numsteps < 0 else "stepu"
-            self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
+            try:
+                self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
+            except FalseAttocubeReplyError as e:
+                print(e)
+            time.sleep(int(round(abs(numsteps)/200)) + 2)
 
 
 class MultilineWiznet(object):
@@ -73,11 +79,11 @@ class MultilineWiznet(object):
     async def write(self, val):
         for retry in range(self.N_RETRIES):
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.setblocking(0) # connect, send, and receive should return
+            conn.setblocking(0)  # connect, send, and receive should return
             # or fail immediately
             try:
                 conn.connect((self.ip, self.PORT))
-            except BlockingIOError as e: # always fails to connect instantly
+            except BlockingIOError as e:  # always fails to connect instantly
                 pass
             await asyncio.sleep(self.CONNECT_DELAY) # (even with a succesful
             # blocking connect, a delay seems to be needed by the wiznet
@@ -101,13 +107,13 @@ class MultilineWiznet(object):
     async def ask(self, val):
         for retry in range(self.N_RETRIES):
             conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.setblocking(0) # connect, send, and receive should return
+            conn.setblocking(0)  # connect, send, and receive should return
             # or fail immediately
             try:
                 conn.connect((self.ip, self.PORT))
-            except BlockingIOError as e: # always fails to connect instantly
+            except BlockingIOError as e:  # always fails to connect instantly
                 pass
-            await asyncio.sleep(self.CONNECT_DELAY) # (even with a succesful
+            await asyncio.sleep(self.CONNECT_DELAY)  # (even with a succesful
             # blocking connect, a delay seems to be needed by the wiznet
             try:
                 conn.recv(1024)  # Make sure the buffer is empty
@@ -120,9 +126,12 @@ class MultilineWiznet(object):
                 await asyncio.sleep(self.CONNECT_DELAY)
                 result = conn.recv(1024)
                 result = result.decode()
-                assert result.endswith(self.parameters['linebreak']
-                                       + self.parameters['prompt']) # to make sure all data have been received
-                return result.rstrip(self.parameters['linebreak'] + self.parameters['prompt'])
+                try:
+                    assert result.endswith(self.parameters['linebreak']
+                                           + self.parameters['prompt'])  # to make sure all data have been received
+                    return result.rstrip(self.parameters['linebreak'] + self.parameters['prompt'])
+                except AssertionError:
+                    raise FalseAttocubeReplyError('last line from Attocube: {}'.format(result))
             except OSError as e: # send failed because connection is not
                 # available
                 continue # continue with the retry loop
