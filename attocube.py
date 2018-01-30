@@ -8,6 +8,7 @@ import quamash
 import asyncio
 import warnings
 import time
+import numpy as np
 
 # from .wiznet import SerialFromEthernet
 from .async_utils import wait
@@ -32,7 +33,7 @@ class Attocube(object):
     rtscts = False
     dsrdtr = False
 
-    def __init__(self, ip, ip_or_port='COM1', *args, **kwds):
+    def __init__(self, ip, want_full_startup=False, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
         self.parameters = {"linebreak": "\r\n", "prompt": '> '}
         self.axes = ['x', 'z', 'y']  # must be arranged in the same order as the axes on the attocube driver
@@ -40,8 +41,40 @@ class Attocube(object):
 
         self.a = MultilineWiznet(self.ip, self.parameters)
 
-        for index in (1, 2, 3):
-            self.a.ask_sync("setm %i stp\r\n"%index)
+        if want_full_startup:
+            for index in range(self.axes):
+                self.a.ask_sync("setm %i stp\r\n" % (index+1))
+
+    def check_capacity(self, ax):
+        """
+        Returns the capacity measured on the desired axis, in nF. Returns NaN if the reply from the attocube isn't
+        as indicated in the documentation
+        :param ax:
+        :return: capacity
+        """
+        ax_no = self.axes.index(ax) + 1
+        self.a.ask_sync('setm {} cap'.format(ax_no))
+        capacity = self.a.ask_sync('getc {}'.format(ax_no))
+        self.a.ask_sync('setm {} stp'.format(ax_no))
+        start = capacity.find('=')
+        end = capacity.find(' nF')
+        try:
+            capacity = int(capacity[start+2:end])
+        except ValueError as e:
+            capacity = np.nan
+            print(e)
+        return capacity
+
+    def check_connections(self):
+        """
+        Does the check in order of the attribute self.axes. Returns 1 if it is connected, 0 otherwise
+        :return:
+        """
+        connected_check = [0,0,0]
+        for i in range(len(self.axes)):
+            if self.check_capacity(self.axes[i]):
+                connected_check[i] = 1
+        return connected_check
 
     def steps(self, ax, numsteps):
         ''' Advances by numsteps along the given axis ax.
@@ -53,7 +86,6 @@ class Attocube(object):
             pass
         else:
             dir = self.axes.index(ax) + 1
-
             string = "stepd" if numsteps < 0 else "stepu"
             try:
                 self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
