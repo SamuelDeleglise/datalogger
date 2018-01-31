@@ -12,6 +12,7 @@ class UC480Camera:
     def __init__(self, camera_alias=None):
         self.cam = None
         self.load_camera(camera_alias)
+        self.documentation_link = 'https://github.com/mabuchilab/Instrumental'
 
         self.exposure_time = 200
         self.timeout_time = 2000
