@@ -91,7 +91,7 @@ class Attocube(object):
                 self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
             except FalseAttocubeReplyError as e:
                 print(e)
-            time.sleep(int(round(abs(numsteps)/200)) + 2)
+            time.sleep(int(round(abs(numsteps)/200)))
 
 
 class MultilineWiznet(object):
