@@ -65,16 +65,49 @@ class Attocube(object):
             print(e)
         return capacity
 
+    def check_mode(self, ax):
+        """
+        Checks the mode in which all axes currently are.
+        :return: a 3-letter string corresponding to the mode of the axis for each axis
+        """
+        ax_no = self.axes.index(ax) + 1
+        res = self.a.ask_sync('getm {}'.format(ax_no))
+        start = res.find('= ')
+        end = res.find('\r\nOK')
+        mode = res[start+2:end]
+        return mode
+
+    def ensure_step_mode(self, *axes):
+        """
+        Checks the mode of all given axes; If they aren't "stp", switches it to that. Otherwise it does nothing.
+        It returns the state the axes were in originally.
+        :param axes:
+        :return: previous_mode
+        """
+        previous_modes = []
+        for ax in axes:
+            current_mode = self.check_mode(ax)
+            if current_mode != 'stp':
+                ax_no = self.axes.index(ax) + 1
+                res = self.a.ask_sync('setm {} stp'.format(ax_no))
+            previous_modes.append(current_mode)
+        return previous_modes
+
+
     def check_connections(self):
         """
         Does the check in order of the attribute self.axes. Returns 1 if it is connected, 0 otherwise
         :return:
         """
-        connected_check = [0,0,0]
+        connected_check = [0, 0, 0]
         for i in range(len(self.axes)):
             if self.check_capacity(self.axes[i]):
                 connected_check[i] = 1
         return connected_check
+
+
+
+
 
     def steps(self, ax, numsteps, time_per_step=1/400):
         ''' Advances by numsteps along the given axis ax.
