@@ -33,7 +33,7 @@ class Attocube(object):
     rtscts = False
     dsrdtr = False
 
-    def __init__(self, ip, want_full_startup=False, ip_or_port='COM1', *args, **kwds):
+    def __init__(self, ip, want_full_startup=True, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
         self.parameters = {"linebreak": "\r\n", "prompt": '> '}
         self.axes = ['x', 'z', 'y']  # must be arranged in the same order as the axes on the attocube driver
@@ -42,7 +42,7 @@ class Attocube(object):
         self.a = MultilineWiznet(self.ip, self.parameters)
 
         if want_full_startup:
-            for index in range(self.axes):
+            for index in range(len(self.axes)):
                 self.a.ask_sync("setm %i stp\r\n" % (index+1))
 
     def check_capacity(self, ax):
@@ -76,7 +76,7 @@ class Attocube(object):
                 connected_check[i] = 1
         return connected_check
 
-    def steps(self, ax, numsteps):
+    def steps(self, ax, numsteps, time_per_step=1/400):
         ''' Advances by numsteps along the given axis ax.
         The axes are indicated on the attocube generator '''
         # note: exists command for faster, not implemented
@@ -91,7 +91,7 @@ class Attocube(object):
                 self.a.ask_sync("%s %i %i"%(string, dir, abs(numsteps)))
             except FalseAttocubeReplyError as e:
                 print(e)
-            time.sleep(int(round(abs(numsteps)/200)))
+            time.sleep(int(round(abs(numsteps)*time_per_step)))
 
 
 class MultilineWiznet(object):
