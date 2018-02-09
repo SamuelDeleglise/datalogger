@@ -93,7 +93,6 @@ class Attocube(object):
             previous_modes.append(current_mode)
         return previous_modes
 
-
     def check_connections(self):
         """
         Does the check in order of the attribute self.axes. Returns 1 if it is connected, 0 otherwise
@@ -104,10 +103,6 @@ class Attocube(object):
             if self.check_capacity(self.axes[i]):
                 connected_check[i] = 1
         return connected_check
-
-
-
-
 
     def steps(self, ax, numsteps, time_per_step=1/400):
         ''' Advances by numsteps along the given axis ax.
@@ -215,4 +210,3 @@ class MultilineWiznet(object):
 
     def write_sync(self, val):
         return wait(self.write(val))
-
