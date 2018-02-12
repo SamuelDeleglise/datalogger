@@ -21,21 +21,23 @@ class FalseAttocubeReplyError(Exception):
 
 class Attocube(object):
     # made from scratch without using serial-interface due to its unique format (multiple lined responses)
-    linebreak = '\r\n'
-    prompt = '> '  # some instruments also reply with a prompt after the linebreak, such as >
-    timeout = 2
-    parity = serial.PARITY_NONE
-    stopbits = serial.STOPBITS_ONE
-    bytesize = 8
-    baudrate = 38400
+    LINEBREAK = '\r\n'
+    PROMPT = '> '  # some instruments also reply with a prompt after the linebreak, such as >
+    TIMEOUT = 2
+    PARITY = serial.PARITY_NONE
+    STROPBITS = serial.STOPBITS_ONE
+    BYTESIZE = 8
+    BAUDRATE = 38400
 
-    xonxoff = False
-    rtscts = False
-    dsrdtr = False
+    XONXOFF = False
+    RTSCTS = False
+    DSRDTR = False
+
+    ERROR = FalseAttocubeReplyError
 
     def __init__(self, ip, want_full_startup=True, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
-        self.parameters = {"linebreak": "\r\n", "prompt": '> '}
+        self.parameters = {"linebreak": LINEBREAK, "prompt": PROMPT}
         self.axes = ['x', 'z', 'y']  # must be arranged in the same order as the axes on the attocube driver
         # self.direction_flip = [-1, 1, -1]  # added manually to make directions correspond with the desired image
 
@@ -190,8 +192,8 @@ class MultilineWiznet(object):
                     assert result.endswith(self.parameters['linebreak']
                                            + self.parameters['prompt'])  # to make sure all data have been received
                     return result.rstrip(self.parameters['linebreak'] + self.parameters['prompt'])
-                except AssertionError:
-                    raise FalseAttocubeReplyError('last line from Attocube: {}'.format(result))
+                except FalseAttocubeReplyError:
+                    raise FalseAttocubeReplyError(repr('last line from Attocube: {}'.format(result)))
             except OSError as e: # send failed because connection is not
                 # available
                 continue # continue with the retry loop
