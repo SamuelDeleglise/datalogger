@@ -37,7 +37,7 @@ class Attocube(object):
 
     def __init__(self, ip, want_full_startup=True, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
-        self.parameters = {"linebreak": LINEBREAK, "prompt": PROMPT}
+        self.parameters = {"linebreak": self.LINEBREAK, "prompt": self.PROMPT}
         self.axes = ['x', 'z', 'y']  # must be arranged in the same order as the axes on the attocube driver
         # self.direction_flip = [-1, 1, -1]  # added manually to make directions correspond with the desired image
 
