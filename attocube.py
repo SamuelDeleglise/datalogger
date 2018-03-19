@@ -33,7 +33,7 @@ class Attocube(object):
     RTSCTS = False
     DSRDTR = False
 
-    ERROR = FalseAttocubeReplyError
+    #ERROR = FalseAttocubeReplyError
 
     def __init__(self, ip, want_full_startup=True, ip_or_port='COM1', *args, **kwds):
         self.ip = ip
@@ -192,14 +192,14 @@ class MultilineWiznet(object):
                     assert result.endswith(self.parameters['linebreak']
                                            + self.parameters['prompt'])  # to make sure all data have been received
                     return result.rstrip(self.parameters['linebreak'] + self.parameters['prompt'])
-                except FalseAttocubeReplyError:
+                except AssertionError:
                     raise FalseAttocubeReplyError(repr('last line from Attocube: {}'.format(result)))
-            except OSError as e: # send failed because connection is not
+            except OSError as e:  # send failed because connection is not
                 # available
-                continue # continue with the retry loop
-            finally: # In any case, the connection should be closed
+                continue  # continue with the retry loop
+            finally:  # In any case, the connection should be closed
                 try:
-                    conn.shutdown(socket.SHUT_WR) # closes quickly
+                    conn.shutdown(socket.SHUT_WR)  # closes quickly
                 except OSError as e:  # socket already disconnected
                     pass
                 finally:
