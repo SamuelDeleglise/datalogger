@@ -42,7 +42,7 @@ class UC480Camera:
         """
         if self.cam is not None:
             self.open()
-            exposure_time = instr.Q_(self.exposure_time, units='ms')
+                exposure_time = instr.Q_(self.exposure_time, units='ms')
             timeout_time = instr.Q_(self.timeout_time, units='ms')
             dump = self.cam.grab_image(timeout_time, exposure_time=exposure_time)  # needed for some reason to get it to work
             img = self.cam.grab_image(timeout_time, exposure_time=exposure_time)
