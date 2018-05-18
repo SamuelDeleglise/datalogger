@@ -155,10 +155,13 @@ class KCubeManager:
         status = bool(int(res_bin[index_to_check]))
         return status
 
-    def check_movement(self, servo_name):
-        dir1 = self.check_status(servo_name, self.IS_MOVING_CLOCKWISE)
-        dir2 = self.check_status(servo_name, self.IS_MOVING_COUNTERCLOCKWISE)
-        return dir1 and dir2
+    def check_homing_need(self, servo_name):
+        """
+        :param servo_name:
+        :return: Returns True if the device needs to be homed before moving, False otherwise
+        """
+        serial = self.open_motors[servo_name].serial
+        return not bool(self.dll.CC_CanMoveWithoutHomingFirst(serial))
 
     def act_and_wait_for_status_change(self, servo_name, act_func, status_to_check, *func_args):
         """
@@ -171,7 +174,6 @@ class KCubeManager:
         """
         old_status = self.check_status(servo_name, status_to_check)
         if len(func_args) > 0:
-            print(func_args)
             act_func(servo_name, func_args)
         else:
             act_func(servo_name)
