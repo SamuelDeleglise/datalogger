@@ -6,8 +6,8 @@ import math
 class KCubeManager:
     DEVICE_MANAGER_DLL_PATH = "C:/Program Files/Thorlabs/Kinesis/Thorlabs.MotionControl.DeviceManager.dll"
     SERVO_DLL_PATH = "C:/Program Files/Thorlabs/Kinesis/Thorlabs.MotionControl.KCube.DCServo.dll"
-    MOVEMENT_SLEEP_TIME = 0.02  # seconds to wait for movement detection
-    SIGNAL_WAIT_ATTEMPTS = 20
+    MOVEMENT_SLEEP_TIME = 0.02  # default seconds to wait for movement detection
+    SIGNAL_WAIT_ATTEMPTS = 20  # default no of attempts to get the right signal
 
     def __init__(self):
         # Finds the dll
@@ -66,9 +66,9 @@ class KCubeManager:
         :param new_name:
         """
         if old_name in self.motors.keys():
-            serial = self.motors[old_name].serial
+            motor = self.motors[old_name]
             self.motors.pop(old_name)
-            self.motors[new_name] = Motor(serial, self.dll)
+            self.motors[new_name] = motor
         else:
             print('{} is not a motor name. \nAvailable names are: {}'.format(old_name, self.motors.keys()))
 
@@ -212,9 +212,13 @@ class Motor:
     def check_status(self, status_to_check):
         serial = self.serial
         self.check(self.dll.CC_RequestStatusBits(serial))
-        res = self.dll.CC_GetStatusBits(serial)
-        res_bin = self.signed_bin(res)
-        res_bin = res_bin[::-1]
+        try:
+            res = self.dll.CC_GetStatusBits(serial)
+            res_bin = self.signed_bin(res)
+            res_bin = res_bin[::-1]
+        except TypeError as e:
+            raise KCubeResponseError(e+'\nCheck if motor is overloaded.')
+
         index_to_check = int(math.log(status_to_check, 2))
         status = bool(int(res_bin[index_to_check]))
         return status
@@ -299,3 +303,9 @@ class Motor:
         return new_bin
 
 
+class KCubeResponseError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
