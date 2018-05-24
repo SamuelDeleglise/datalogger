@@ -78,6 +78,7 @@ class Motor:
     IS_MOVING_COUNTERCLOCKWISE = 0x00000020
     IS_HOMING = 0x00000200
     IS_HOMED = 0x00000400
+    IS_ACTIVE = 0x20000000
     UM_PER_COUNT = 0.29
     BACKLASH = 6  # in µm. Maximum value for MTS50/M-Z8
 
@@ -155,28 +156,86 @@ class Motor:
             return True
         else:
             return False
-
-    def move_relative_position_and_wait(self,  distance):
-        """
-        Moved the servo by the given distance. Can be positive or negative, in µm
+    """
+    def move_relative_position_and_wait(self,  distance, max_error=10, min_error=1, max_tries=10):
+        
+        Moved the servo by the given distance. Can be positive or negative, in µm.
+        Moves the motor iteratively (in one direction only to avoid backlash) until the  min_error threshold is
+        reached or crossed.
+        This is done by first moving such as to get to withing max_error (recommended default 10), then moving by just
+        less than the remaining distance to cross.
+        CAUTION if the motor overshoots, it will return False.
         :param distance: in µm
+        :param max_error: in µm, acceptable error for the first attempt at moving
+        :param min_error: in µm, error threshold to be met.
+        :param max_tries: maximum number of checks before a movement is determined to be stagnating.
+        :return: True if movement is seen to be completed, False if the movement is not found to start or end
+        successfully.
+        
+        p0 = self.get_tick_position()
+        p_goal = p0 + distance/self.UM_PER_COUNT
+        p_new = p0
+        no_tries = 0
+        self.move_relative_position(distance)
+        # Coarse movement
+        while abs(p_goal-p_new) > max_error:
+            p0 = p_new
+            time.sleep(self.movement_sleep_time)
+            p_new = self.get_tick_position()
+            if p0 == p_new:
+                no_tries = no_tries + 1
+            if no_tries == max_tries:
+                return False
+        # Fine movement
+        p0 = self.get_tick_position()
+        p_new = p0
+        dx = abs(p_goal-p_new)
+        no_tries = 0
+        while dx > min_error:
+            self.move_relative_position(math.floor(dx))
+            time.sleep(self.movement_sleep_time)
+            p_new = self.get_tick_position()
+            if p0 == p_new:
+                no_tries = no_tries + 1
+            if no_tries == max_tries:
+                return False
+            dx = abs(p_goal-p_new)
+        return True
+
+    """
+    def move_relative_position_sync(self,  distance, timeout=5):
+        """
+        Moved the servo by the given distance. Can be positive or negative, in µm.
+        Will wait for the movement to end before returning.
+        :param distance: in µm, timeout in s
         :return: True if movement is seen to be completed, False if the movement is not found to start.
+        """
         """
         if distance > 0:
             test = self.IS_MOVING_COUNTERCLOCKWISE
         else:
             test = self.IS_MOVING_CLOCKWISE
-        movement_started = self.act_and_wait_for_status_change(self.move_relative_position, test, distance)
-        if movement_started:
-            is_moving = True
-            while is_moving:
-                time.sleep(self.movement_sleep_time)
-                is_moving = self.check_status(test)
-            return True
-        else:
-            return False
+        """
+        p_start = self.get_tick_position()
+        self.move_relative_position_async(distance)
+        done = False
+        time_start = time.time()
+        while not done:
+            if time.time() - time_start>timeout:
+                raise ValueError("Timeout in move")
+            time.sleep(self.movement_sleep_time)
+            done = self.get_tick_position() != p_start and not self.check_status(self.IS_ACTIVE)
+        # checks the movement is completely done (for fine movement endings can be the case)
+        done = False
+        p_new = self.get_tick_position()
+        while not done:
+            p_old = p_new
+            time.sleep(self.movement_sleep_time)
+            p_new = self.get_tick_position()
+            done = p_old == p_new
 
-    def move_relative_position(self, *arg):
+
+    def move_relative_position_async(self, *arg):
         """
         Moves forward (or backward) by the given distance (in µm) from current position
         :param arg: Should only be one single argument: the displacement (in µm)!
@@ -232,7 +291,7 @@ class Motor:
 
     def act_and_wait_for_status_change(self, act_func, status_to_check, *func_args):
         """
-        Await a (relatively) immediate response to a given action. Will fail for long steps is SIGNAL_WAIT_ATTEMPTS
+        Await a (relatively) immediate response to a given action. Will fail for long steps if signal_wait_attempts
         is small.
         :param act_func: the function to act, and whose result to await
         :param status_to_check:
