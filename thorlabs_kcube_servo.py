@@ -87,6 +87,7 @@ class Motor:
         self.dll = dll
         self.movement_sleep_time = movement_sleep_time
         self.signal_wait_attempts = signal_wait_attempts
+        self.saved_position = None
 
     @staticmethod
     def check(val):
@@ -156,7 +157,11 @@ class Motor:
         else:
             return False
 
-    def move_sync(self, pos, timeout=5):
+    def move_async(self, pos):
+        tick_pos = int(pos/self.UM_PER_COUNT)
+        self.move_to_tick_position(tick_pos)
+
+    def move_sync(self, pos, timeout=30, n_retry=3):
         """
         Moved the servo by the given distance. Can be positive or negative, in µm.
         Will wait for the movement to end before returning.
@@ -166,14 +171,23 @@ class Motor:
         """
         tick_pos = int(pos/self.UM_PER_COUNT)
         p_start = self.get_tick_position()
-        self.move_to_position(tick_pos)
+        #if abs(tick_pos - p_start) < 0.1:
+        #    return
+        self.move_async(pos)
         done = False
         time_start = time.time()
+        retries = 0
         while not done:
             if time.time() - time_start > timeout:
-                raise ValueError("Timeout in move")
+                if retries > n_retry:
+                    raise ValueError("Timeout in move")
+                else:
+                    retries += 1
+                    self.move_to_tick_position(tick_pos)
+                    time_start = time.time()
             time.sleep(self.movement_sleep_time)
-            done = self.get_tick_position() != p_start and not self.check_status(self.IS_ACTIVE)
+            done = abs(self.get_tick_position() - tick_pos)<20
+            #done = self.get_tick_position() != p_start and not self.check_status(self.IS_ACTIVE)
         # checks the movement is completely done (for fine movement endings can be the case)
         done = False
         p_new = self.get_tick_position()
@@ -196,7 +210,7 @@ class Motor:
         done = False
         time_start = time.time()
         while not done:
-            if time.time() - time_start>timeout:
+            if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.get_tick_position() != p_start and not self.check_status(self.IS_ACTIVE)
@@ -241,23 +255,25 @@ class Motor:
             while type(arg) is tuple:
                 arg = arg[0]  # to ensure only first arg is kept
             tick_jog = int(arg/self.UM_PER_COUNT)
-            self.move_to_position(tick_pos+tick_jog)
+            self.move_to_tick_position(tick_pos+tick_jog)
 
     def home(self):
         self.check(self.dll.CC_Home(self.serial))
 
-    def move_to_position(self, *arg):
+    def move_to_tick_position(self, tick_pos):
         """
         Moves to a given position (in device units)
         :param arg: Should only be one single argument: the position (in servo ticks)!
         Any other values will be ignored.
         """
-        if len(arg) == 0:
-            raise ValueError('Not enough arguments given')
-        else:
-            if len(arg) > 1:
-                print('Too many arguments. Only the first kept')
-            self.check(self.dll.CC_MoveToPosition(self.serial, arg[0]))
+        self.check(self.dll.CC_MoveToPosition(self.serial, tick_pos))
+
+    def save_position(self):
+        """
+        Saves the current motor position in real units
+        :return:
+        """
+        self.saved_position = self.get_position()
 
     def check_status(self, status_to_check):
         serial = self.serial
