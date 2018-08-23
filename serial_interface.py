@@ -7,7 +7,7 @@ import quamash
 import asyncio
 
 from serial import SerialException
-from async_utils import wait
+from .async_utils import wait
 
 
 def serial_interface_factory(ip_or_port, **kwds):
