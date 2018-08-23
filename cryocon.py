@@ -179,3 +179,7 @@ class CryoCon(SerialInstrument):
     async def loop_type(self):
         return await self.serial.ask("LOOP 2:TYPE?")
 
+    async def output_power(self):
+        val = await self.serial.ask("LOOP 2:OUTP?")
+        return float(val)
+

@@ -5,6 +5,8 @@ import time, datetime
 import numpy as np
 from . import widgets_base as wb
 import os.path as osp
+import os, pickle
+import matplotlib.pylab as plt
 
 
 class DataPlotterWidget(QtWidgets.QMainWindow):
@@ -136,6 +138,9 @@ class MyControlWidget(QtWidgets.QWidget):
         self.lay_h.addWidget(self.label_minutes)
         self.lay_h.addStretch()
 
+        self.plot_button = QtWidgets.QPushButton("Plot figure")
+        self.lay_h.addWidget(self.plot_button)
+        self.plot_button.clicked.connect(self.plot_figure)
         self.tree = PlotterTree(self.dlg)
         self.lay_v.addWidget(self.tree)
 
@@ -219,6 +224,44 @@ class MyControlWidget(QtWidgets.QWidget):
 
     def remove_channel(self, channel):
         return self.tree.remove_channel(channel)
+
+    def plot_figure(self):
+        plt.close('all')
+        fig = plt.figure()
+        for chan in self.dlg.channels.values():
+            if chan.visible:
+                times, vals = chan.times, chan.values
+
+                time_bound, val_bound = \
+                chan.widget.curve.getViewBox().getState()['targetRange']
+                time_min = time_bound[0]
+                time_max = time_bound[1]
+                time_span = (times > time_min) * (times < time_max)
+                times, vals = times[time_span], vals[time_span]
+                if len(times) > 0 and len(vals) > 0:
+                    times_to_plot = (times - times[0])/60
+                    plt.plot(times_to_plot, vals, label=chan.name)
+        plt.legend()
+        plt.ylim(val_bound)
+        plt.xlabel('Time (min)')
+        plt.title(time.strftime("Start time %H:%M:%S", time.gmtime(times[0])))
+        path = os.path.join("Z:\ManipMembranes\data\database",
+                            time.strftime("%Y\%m\%d", time.gmtime()))
+        if not os.path.exists(path):
+            os.mkdir(path)
+        filename = 'dataplotter_figure'
+        ind = 0
+        while filename+'.png' in os.listdir(path):
+            if filename.count('({:.0f})'.format(ind-1))>0:
+                filename = filename.replace('({:.0f})'.format(ind-1),'({:.0f})'.format(ind))
+            else:
+                filename = filename+'({:.0f})'.format(ind)
+            ind = ind+1
+        plt.savefig(osp.join(path, filename+'.png'))
+        plt.savefig(osp.join(path, filename+'.pdf'))
+        with open(osp.join(path, filename+'.dat'), 'wb') as f:
+            pickle.dump(fig, f)
+
 
 
 class MyDockTreeWidget(QtWidgets.QDockWidget):
