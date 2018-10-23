@@ -3,7 +3,7 @@ import serial
 from io import StringIO
 import numpy as np
 
-from wiznet import SerialFromEthernet
+from .wiznet import SerialFromEthernet
 from .serial_interface import SerialInstrument
 
 
