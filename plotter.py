@@ -50,6 +50,11 @@ def read_tail(filename, n_floats=64):
             remaining_size -= tail_size
             yield np.frombuffer(buffer, dtype=float)
 
+def get_last_temperature(temperature_filename = r'Z:\ManipMembranes\Data Cryo\He3 RuO2.chan'):
+    a = read_tail(temperature_filename)
+    for line in a:
+        return float(line[1])
+
 class ChannelPlotter(ChannelBase):
     INDEX = 0
     COLORS = ['#1f77b4',
@@ -64,6 +69,7 @@ class ChannelPlotter(ChannelBase):
               '#17becf']
     #[QtGui.QColor(name).name() for name in QtGui.QColor.colorNames()]
     def initialize_attributes(self, name):
+
         self._visible = False
         self._color = self.COLORS[ChannelPlotter.INDEX%len(ChannelPlotter.COLORS)]
         ChannelPlotter.INDEX+=1
@@ -74,6 +80,7 @@ class ChannelPlotter(ChannelBase):
         self.change_detector.addPath(self.filename)
         self.change_detector.fileChanged.connect(
             self.load_last_points_and_plot)
+
 
     def set_curve_visible(self, val):
         # ignores the visibility toggle until the widget attr has been successfully loaded
@@ -143,6 +150,7 @@ class ChannelPlotter(ChannelBase):
             raise FileNotFoundError("No file named " + str(self.filename))
 
     def find_intermediate_dates(self, index_start, index_end):
+
         if index_end - index_start<=1:
             return
         date_start = date.fromtimestamp(self.times[index_start])
@@ -156,7 +164,9 @@ class ChannelPlotter(ChannelBase):
         if date_end - date_intermediate > datetime.timedelta(1):
             self.find_intermediate_dates(index_intermediate, index_end)
 
+
     def find_all_dates(self):
+
         if len(self.times)==0:
             self.all_dates = []
             return self.all_dates
@@ -166,12 +176,14 @@ class ChannelPlotter(ChannelBase):
         if date_end!=date_start:
             self.all_dates.append(date_end)
         self.find_intermediate_dates(0, len(self.times)-1)
+
         return self.all_dates
 
     def load_last_points(self):
+
         all_times = []
         all_vals = []
-        for table in read_tail(self.filename):
+        for ind, table in enumerate(read_tail(self.filename)):
             times = table[::2]
             vals = table[1::2]
             all_times = np.concatenate((times, all_times))
@@ -182,14 +194,17 @@ class ChannelPlotter(ChannelBase):
                 self.values = np.concatenate((self.values, all_vals[mask]))
                 return
 
+
     def load_last_points_and_plot(self):
         """Load data from file"""
+
         self.load_last_points()
         self.plot_data()
 
         if not date.fromtimestamp(self.times[-1]) in self.parent.all_dates:
             if self.widget is not None:
                 self.parent.widget.set_green_days()
+
 
     def plot_data(self):
         if self.widget is not None:
@@ -200,6 +215,7 @@ class DataPlotter(BaseModule):
     widget_type = DataPlotterWidget
 
     def initialize(self):
+
         self._days_to_show = 1
         self._hours_to_show = 0
         self._minutes_to_show = 0
@@ -209,6 +225,7 @@ class DataPlotter(BaseModule):
 
         self.change_detector = QtCore.QFileSystemWatcher([self.directory])
         self.change_detector.directoryChanged.connect(self.update_channel_list)
+
 
     def update_channel_list(self):
         keep = []
