@@ -26,13 +26,13 @@ class UC480Camera:
 
     def close(self):
         if self.cam is None:
-            raise NoCameraError(NO_CAMERA_ERROR)
+            raise NoCameraError(self.NO_CAMERA_ERROR)
         else:
             self.cam.close()
 
     def open(self):
         if self.cam is None:
-            raise NoCameraError(NO_CAMERA_ERROR)
+            raise NoCameraError(self.NO_CAMERA_ERROR)
         else:
             self.cam._initialize()
 
@@ -49,5 +49,5 @@ class UC480Camera:
             self.close()
             return img
         else:
-            raise NoCameraError(NO_CAMERA_ERROR)
+            raise NoCameraError(self.NO_CAMERA_ERROR)
 

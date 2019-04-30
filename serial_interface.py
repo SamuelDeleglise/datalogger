@@ -1,13 +1,14 @@
 from serial import Serial
 import socket
 import sys
-from asyncio import Future, ensure_future, CancelledError, \
+from asyncio import Future, CancelledError, \
     set_event_loop, TimeoutError
+from pyrpl.async_utils import ensure_future, sleep_async
 import quamash
 import asyncio
 
 from serial import SerialException
-from .async_utils import wait
+from pyrpl.async_utils import wait
 
 
 def serial_interface_factory(ip_or_port, **kwds):
@@ -137,17 +138,17 @@ class Wiznet(SerialInterface):
                 conn.connect((self.ip, self.PORT))
             except BlockingIOError as e: # always fails to connect instantly
                 pass
-            await asyncio.sleep(self.CONNECT_DELAY) # (even with a succesful
+            await sleep_async(self.CONNECT_DELAY) # (even with a succesful
             # blocking connect, a delay seems to be needed by the wiznet
             try:
                 conn.recv(1024)  # Make sure the buffer is empty
             except OSError as e:
                 pass
-            await asyncio.sleep(self.CONNECT_DELAY)
+            await sleep_async(self.CONNECT_DELAY)
             string = (val + self.linebreak).encode('utf-8')
             try:
                 conn.send(string)
-                await asyncio.sleep(self.CONNECT_DELAY)
+                await sleep_async(self.CONNECT_DELAY)
                 result = conn.recv(1024)
                 result = result.decode()
                 assert result.endswith(self.linebreak) # to make sure all data have been received
@@ -161,7 +162,7 @@ class Wiznet(SerialInterface):
                 except OSError as e:  # socket already disconnected
                     pass
                 finally:
-                    await asyncio.sleep(self.CONNECT_DELAY)
+                    await sleep_async(self.CONNECT_DELAY)
                     conn.close()
         raise ValueError("Failed to connect after %i retries"%self.N_RETRIES)
 
