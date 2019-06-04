@@ -349,6 +349,10 @@ class DataPlotter(BaseModule):
         '''
 
     def load_channels(self):
+        print("start")
+        from sys import stdout
+        stdout.flush()
+        
         for val in os.listdir(self.directory):
             if val.endswith('.chan'):
                 name = val[:-5]
@@ -358,6 +362,9 @@ class DataPlotter(BaseModule):
                     self.channels[name] = ChannelPlotter(self, name)
                 except FileNotFoundError:
                     pass
+        print("stop")
+        from sys import stdout
+        stdout.flush()
     @property
     def directory(self):
         return osp.dirname(self.config_file)

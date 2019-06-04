@@ -1,8 +1,8 @@
 from serial import Serial
 import socket
 import sys
-from asyncio import Future, CancelledError, \
-    set_event_loop, TimeoutError
+#from asyncio import Future, CancelledError, \
+#    set_event_loop, TimeoutError
 from pyrpl.async_utils import ensure_future, sleep_async
 import quamash
 import asyncio

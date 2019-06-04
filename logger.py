@@ -7,8 +7,9 @@ import asyncio
 from asyncio import ensure_future
 import time
 import inspect
-from asyncio import Future, ensure_future, CancelledError, \
-    set_event_loop, TimeoutError
+#from asyncio import Future, ensure_future, CancelledError, \
+ #   set_event_loop, TimeoutError
+from pyrpl.async_utils import ensure_future, sleep_async
 import quamash
 import asyncio
 import sys
@@ -25,7 +26,7 @@ from quamash import QEventLoop, QThreadExecutor
 #app = QApplication.instance()
 app = QApplication(sys.argv)
 
-set_event_loop(quamash.QEventLoop())
+#set_event_loop(quamash.QEventLoop())
 
 class ChannelLogger(ChannelBase):
     def initialize_attributes(self, name):
@@ -133,7 +134,7 @@ class ChannelLogger(ChannelBase):
             else:
                 moment = time.time()
                 self.save_point(val, moment)
-            await asyncio.sleep(self.delay)
+            await sleep_async(self.delay)
 
     def save_point(self, val, moment):
         """

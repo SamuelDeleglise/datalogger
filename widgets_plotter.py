@@ -12,6 +12,7 @@ import matplotlib.pylab as plt
 class DataPlotterWidget(QtWidgets.QMainWindow):
     def __init__(self, dataplotter):
         super(DataPlotterWidget, self).__init__()
+        self.vertical_day_lines = []
         self.dlg = dataplotter #this dataplotter does not contain any channels yet
 
         self.graph = pg.GraphicsWindow(title="DataPlotter")
@@ -35,6 +36,18 @@ class DataPlotterWidget(QtWidgets.QMainWindow):
 
     def set_green_days(self):
         self._dock_tree.mycontrolwidget.set_green_days()
+		
+    def update_vertical_lines_for_days(self):
+        for curve in self.vertical_day_lines:
+            self.plot_item.removeItem(curve)
+        first_day = datetime.date.fromtimestamp(self.dlg.earliest_point)
+        first_timestamp = datetime.datetime(first_day.year, first_day.month, first_day.day).timestamp()
+        self.vertical_day_lines = [self.plot_item.plot([first_timestamp]*2, [0,600])]
+        timestamp = first_timestamp + 24*3600
+        while timestamp < self.dlg.latest_point:
+            self.vertical_day_lines.append(self.plot_item.plot([timestamp]*2, [0,600]))
+            timestamp += 24*3600
+		
 
 
 class PlotterItem(wb.MyTreeItem):
@@ -67,6 +80,7 @@ class PlotterItem(wb.MyTreeItem):
         if self.channel.visible:
             self.curve.setData(self.times, self.values)
         self.curve.setVisible(self.channel.visible)
+        self.channel.parent.widget.update_vertical_lines_for_days()
 
     def set_color(self, color):
         self.button.setStyleSheet('background-color: '+ color)
