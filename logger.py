@@ -122,6 +122,13 @@ class ChannelLogger(ChannelBase):
     def filename(self):
         return osp.join(self.parent.directory, self.name + '.chan')
 
+    @property
+    def filename_date(self, moment):
+        year = time.strftime('%Y', moment)
+        date = time.strftime('%Y-%m-%d', moment)
+
+        return osp.join(self.parent.directory, year + '\\' + date + '\\' + self.name + ' ' + date + '.chan')
+
     async def measure(self):
         while(self.active):
             try:
@@ -141,7 +148,8 @@ class ChannelLogger(ChannelBase):
         Appends a single point at the end of the curve, eventually, removes points that are too old from the curve,
         and saves the val and moment in the channel file.
         """
-        with open(self.filename, 'ab') as f:
+
+        with open(self.filename_date, 'ab') as f:
             f.write(struct.pack('d', moment))
             f.write(struct.pack('d', val))
         #self.parent.latest_point = moment
