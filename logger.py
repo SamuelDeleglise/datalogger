@@ -37,12 +37,13 @@ class ChannelLogger(ChannelBase):
         self._callback = "random_coroutine"
 
     def load_data(self):
-        if osp.exists(self.filename): # load existing data (widget needs to exist to plot)
-            with open(self.filename, 'r') as f:
-                pass
-        else: # create a data file
-            with open(self.filename, 'w') as f:
-                pass
+        pass
+        #if osp.exists(self.filename): # load existing data (widget needs to exist to plot)
+        #    with open(self.filename, 'r') as f:
+        #        pass
+        #else: # create a data file
+        #    with open(self.filename, 'w') as f:
+        #        pass
 
     @property
     def name(self):
@@ -118,16 +119,23 @@ class ChannelLogger(ChannelBase):
         active, self.delay, self.callback = val
         self.active = active
 
-    @property
-    def filename(self):
-        return osp.join(self.parent.directory, self.name + '.chan')
+    # @property
+    # def filename(self):
+    #     return osp.join(self.parent.directory, self.name + '.chan')
 
-    @property
     def filename_date(self, moment):
-        year = time.strftime('%Y', moment)
-        date = time.strftime('%Y-%m-%d', moment)
+        """ a file stored in a di
+        """
+        tim = time.gmtime(moment)
+        year = tim.tm_year
+        mon = tim.tm_mon
+        day = tim.tm_mday
+        date ='{:02d}-{:02d}-{:02d}'.format(year-2000, mon, day)
+        print('date is ', date)
+        print('parent dir', self.parent.directory)
+        direc = osp.join(self.parent.directory, 'data\\' + str(year) + '\\' + date + '\\' + self.name + ' ' + date + '.chan')
 
-        return osp.join(self.parent.directory, year + '\\' + date + '\\' + self.name + ' ' + date + '.chan')
+        return direc
 
     async def measure(self):
         while(self.active):
@@ -148,8 +156,26 @@ class ChannelLogger(ChannelBase):
         Appends a single point at the end of the curve, eventually, removes points that are too old from the curve,
         and saves the val and moment in the channel file.
         """
+        path = self.filename_date(moment)
+        print(path)
 
-        with open(self.filename_date, 'ab') as f:
+        dir_lab = os.path.split(os.path.split(os.path.split(os.path.split(path)[0])[0])[0])[0]
+
+        dir_data = dir_lab + r'/data'
+        if not os.path.exists(dir_data):
+             os.mkdir(dir_data)
+
+        dir_year = os.path.split(os.path.split(path)[0])[0]
+        if not os.path.exists(dir_year):
+             os.mkdir(dir_year)
+
+        dir_date = os.path.split(path)[0]
+        if not os.path.exists(dir_date):
+             os.mkdir(dir_date)
+
+        print("ready")
+
+        with open(path, 'ab') as f:
             f.write(struct.pack('d', moment))
             f.write(struct.pack('d', val))
         #self.parent.latest_point = moment

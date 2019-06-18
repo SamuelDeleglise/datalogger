@@ -84,6 +84,7 @@ class BaseModule(object):
         if path is None:
             path = osp.join(os.environ["HOMEDRIVE"], os.environ[
                 "HOMEPATH"], '.datalogger')
+        print("The path is", path)
         self.prepare_path(path)
         self.initialize()
         self.load_config()
