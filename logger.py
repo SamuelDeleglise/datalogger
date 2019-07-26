@@ -58,8 +58,7 @@ class ChannelLogger(ChannelBase):
         if val in self.parent.channels.keys():
             raise ValueError('A channel named %s already exists'%val)
         # 1. change data file name
-        os.rename(self.filename, osp.join(self.parent.directory,
-                                          val + '.chan'))
+        os.rename(self.filename, self.filename_rename(val))
         # 2. Change the name in the config file
         config = self.parent.get_config_from_file()
         config['channels'][val] = config['channels'][self._name]
@@ -119,14 +118,17 @@ class ChannelLogger(ChannelBase):
         active, self.delay, self.callback = val
         self.active = active
 
-    # @property
-    # def filename(self):
-    #     return osp.join(self.parent.directory, self.name + '.chan')
+# @property
+# def filename(self):
 
-    def filename_date(self, moment):
-        """ a file stored in a di
+#         return osp.join(self.parent.directory, self.name + '.chan')
+    
+    @property
+    def filename(self):
+        """ a file stored in a directory
         """
-        tim = time.gmtime(moment)
+        moment = time.time()
+        tim = time.localtime(moment)
         year = tim.tm_year
         mon = tim.tm_mon
         day = tim.tm_mday
@@ -134,7 +136,20 @@ class ChannelLogger(ChannelBase):
         print('date is ', date)
         print('parent dir', self.parent.directory)
         direc = osp.join(self.parent.directory, 'data\\' + str(year) + '\\' + date + '\\' + self.name + ' ' + date + '.chan')
+        return direc
 
+    def filename_rename(self, val):
+        """ a file stored in a directory
+        """
+        moment = time.time()
+        tim = time.gmtime(moment)
+        year = tim.tm_year
+        mon = tim.tm_mon
+        day = tim.tm_mday
+        date ='{:02d}-{:02d}-{:02d}'.format(year-2000, mon, day)
+        print('date is ', date)
+        print('parent dir', self.parent.directory)
+        direc = osp.join(self.parent.directory, 'data\\' + str(year) + '\\' + date + '\\' + val + ' ' + date + '.chan')
         return direc
 
     async def measure(self):
@@ -156,7 +171,7 @@ class ChannelLogger(ChannelBase):
         Appends a single point at the end of the curve, eventually, removes points that are too old from the curve,
         and saves the val and moment in the channel file.
         """
-        path = self.filename_date(moment)
+        path = self.filename
         print(path)
 
         dir_lab = os.path.split(os.path.split(os.path.split(os.path.split(path)[0])[0])[0])[0]
