@@ -12,11 +12,11 @@ DEV = 1                # hardcoded here to the first device
 
 class ConexCC:
     MAX_VELOCITY = 0.4
+    READY_STATES = ['32', '33', '34', '36', '37', '38']
     
     def __init__(self, com_port, velocity):
         self.min_limit = -1
         self.max_limit = -1
-        self.cur_pos = -1
         self.controller_state = ''
         self.positioner_error = ''
         self.movement_sleep_time = 0.1
@@ -34,7 +34,8 @@ class ConexCC:
             print('Velocity set to %.1f'%velocity)
             self.set_homing_velocity(velocity)
             self.read_limits()
-            self.read_cur_pos()
+            print('Current Position = %.3f mm' % self.cur_pos_mm)
+
 
     @classmethod
     def dump_possible_states(cls):
@@ -67,6 +68,7 @@ class ConexCC:
         for s in help_text.split('\n'):
             print(s.strip(' '))
 
+
     def read_limits(self):
         err_str = ''
         resp = 0
@@ -74,44 +76,45 @@ class ConexCC:
         if res != 0 or err_str != '':
             print('Oops: Negative SW Limit: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
         else:
-            print('Negative SW Limit = %.1f' % resp)
+            print('Negative SW Limit = %.1f mm' % resp)
             self.min_limit = resp
 
         res, resp, err_str = self.driver.SR_Get(DEV, resp, err_str)
         if res != 0 or err_str != '':
             print('Oops: Positive SW Limit: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
         else:
-            print('Positive SW Limit = %.1f' % resp)
+            print('Positive SW Limit = %.1f mm' % resp)
             self.max_limit = resp
-
-    def read_cur_pos(self):
-        err_str = ''
-        resp = 0
-        res, resp, err_str = self.driver.TP(DEV, resp, err_str)
-        if res != 0 or err_str != '':
-            print('Oops: Current Position: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
-        else:
-            print('Current Position = %.3f' % resp)
-            self.cur_pos = resp
-
-
-    def exit_disable_state(self):
-        err_str = ''
-        state = 1  # enable
+            
+            
+    def is_ready(self):
+        state = self.state
+        return state in self.READY_STATES
+    
+        
+    def set_state(self, state, err_str=''):
         res, err_str = self.driver.MM_Set(DEV, state, err_str)
+        return res, err_str
+        
+    
+    def set_disable(self):
+        state = 0
+        res, err_str = self.set_state(state)        
         if res != 0 or err_str != '':
-            print('Oops: Leave Disable: result=%d,errString=\'%s\'' % (res, err_str))
+            print('Oops: Leave Enable: result=%d,errString=\'%s\'' % (res, err_str))
         else:
-            print('Exiting DISABLE state')
-
-    def init_positioner(self):
-        err_str = ''
-        res, err_str = self.driver.OR(DEV, err_str)
+            print('Setting state to DISABLE')
+            
+        
+    def set_enable(self):
+        state = 1
+        res, err_str = self.set_state(state)        
         if res != 0 or err_str != '':
-            print('Oops: Find Home: result=%d,errString=\'%s\'' % (res, err_str))
+            print('Oops: Leave Enable: result=%d,errString=\'%s\'' % (res, err_str))
         else:
-            print('Finding Home')
-
+            print('Setting state to ENABLE')
+            
+            
     def set_homing_velocity(self, velocity):
         if velocity > self.MAX_VELOCITY:
             velocity = self.MAX_VELOCITY
@@ -121,6 +124,15 @@ class ConexCC:
             print('Oops: Homing velocity: result=%d,errString=\'%s\'' % (res, err_str))
         else:
             print('Homing velocity set to %.1f mm/s' % velocity)
+
+
+    def init_positioner(self):
+        err_str = ''
+        res, err_str = self.driver.OR(DEV, err_str)
+        if res != 0 or err_str != '':
+            print('Oops: Find Home: result=%d,errString=\'%s\'' % (res, err_str))
+        else:
+            print('Finding Home')
 
 
     def move_relative_async(self, distance_um, verbose=False):
@@ -134,10 +146,18 @@ class ConexCC:
                 print('Oops: Move Relative: result=%d,errString=\'%s\'' % (res, err_str))
             else:
                 if verbose: print('Moving Relative %.3f um' % distance_um)
+            done = False
+        else:
+            print('Stage not ready')
+            done = True
+        return done
                 
+    
     def move_relative_sync(self, distance_um, timeout=30, n_retry=3, verbose=False):
-        self.move_relative_async(distance_um, verbose=verbose)
-        done = False
+        '''
+        The units of the distance is in microns. Moves the given distance from its original position
+        '''
+        done = self.move_relative_async(distance_um, verbose=verbose)
         time_start = time.time()
         while not done:
             if time.time() - time_start > timeout:
@@ -146,6 +166,53 @@ class ConexCC:
             done = self.state==self.done_moving_flag
         # checks the movement is completely done (for fine movement endings can be the case)
     
+    def move_absolute_async(self, new_pos, verbose=False):
+        """
+        The unit of distance is in mm.
+        """
+        if self.is_ready():
+            err_str = ''
+            res, err_str = self.driver.PA_Set(DEV, new_pos, err_str)
+            if res != 0 or err_str != '':
+                print('Oops: Move Absolute: result=%d,errString=\'%s\'' % (res, err_str))
+            else:
+                if verbose: print('Moving to position %.3f mm' % new_pos)
+            done = False
+        else:
+            print('Stage not ready')
+            done = True
+        return done
+    
+    def move_absolute_sync(self, new_pos, timeout=30, n_retry=3, verbose=False):
+        done = self.move_absolute_async(new_pos, verbose=verbose)
+        time_start = time.time()
+        while not done:
+            if time.time() - time_start > timeout:
+                raise ValueError("Timeout in move")
+            time.sleep(self.movement_sleep_time)
+            done = self.state==self.done_moving_flag
+            
+    def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
+        self.move_absolute_sync(new_pos/1e3, 
+                                timeout=timeout, n_retry=n_retry, 
+                                verbose=verbose)
+     
+    @property
+    def cur_pos_mm(self):
+        err_str = ''
+        resp = 0
+        res, resp, err_str = self.driver.TP(DEV, resp, err_str)
+        if res != 0 or err_str != '':
+            print('Oops: Current Position: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
+        return resp
+    
+    @property    
+    def cur_pos(self):
+        """
+        in um
+        """
+        return self.cur_pos_mm*1e3
+                
     @property
     def velocity(self):
         err_str = ''
@@ -154,6 +221,7 @@ class ConexCC:
         if res != 0 or err_str != '':
             print('Oops: Current Velocity: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
         return resp
+    
     
     @velocity.setter
     def velocity(self, v):
@@ -167,6 +235,7 @@ class ConexCC:
         else:
             print('velocity Set to %.1f mm/s' % v)
     
+    
     @property
     def state(self):
         err_str = ''
@@ -177,9 +246,11 @@ class ConexCC:
         self._state = resp2
         return self._state
       
+        
     @state.setter
     def state(self, resp):
         self._state =  resp
+        
         
     @property
     def error(self):
@@ -191,11 +262,11 @@ class ConexCC:
         self._state = resp2
         return self._error
       
+        
     @error.setter
     def error(self, resp):
         self._error =  resp
-          
-     
+
 
     def close(self):
         # note that closing the communication will NOT stop the motor!
