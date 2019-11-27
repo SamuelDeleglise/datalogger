@@ -20,7 +20,6 @@ class ConexCC:
         self.controller_state = ''
         self.positioner_error = ''
         self.movement_sleep_time = 0.1
-        self.done_moving_flag = '33'
 
         self.driver = CommandInterfaceConexCC.ConexCC()
         ret = self.driver.OpenInstrument(com_port)
@@ -126,18 +125,41 @@ class ConexCC:
             print('Homing velocity set to %.1f mm/s' % velocity)
 
 
-    def init_positioner(self):
+    def init_position_async(self):
+        """
+        Initializes the stage position to 0. 
+        """
         err_str = ''
         res, err_str = self.driver.OR(DEV, err_str)
         if res != 0 or err_str != '':
             print('Oops: Find Home: result=%d,errString=\'%s\'' % (res, err_str))
         else:
             print('Finding Home')
-
+            
+    def init_position_sync(self, timeout=30, n_retry=3):
+        self.init_position_async()
+        time_start = time.time()
+        done = False
+        while not done:
+            if time.time() - time_start > timeout:
+                raise ValueError("Timeout in move")
+            time.sleep(self.movement_sleep_time)
+            done = self.state in self.READY_STATES
+        
+            
+    def init_position_and_come_back(self):
+        """
+        Initializes the position.
+        It remembers where is was and comes back to that position
+        """
+        old_pos = self.cur_pos_mm
+        self.init_position_sync()
+        self.move_absolute_sync(old_pos)
 
     def move_relative_async(self, distance_um, verbose=False):
         '''
-        The units of the distance is in microns. Moves the given distance from its original position
+        The units of the distance is um. 
+        Moves the given distance from its original position
         '''
         if self.is_ready():
             err_str = ''
@@ -155,7 +177,8 @@ class ConexCC:
     
     def move_relative_sync(self, distance_um, timeout=30, n_retry=3, verbose=False):
         '''
-        The units of the distance is in microns. Moves the given distance from its original position
+        The units of the distance is um. 
+        Moves the given distance from its original position
         '''
         done = self.move_relative_async(distance_um, verbose=verbose)
         time_start = time.time()
@@ -163,8 +186,9 @@ class ConexCC:
             if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
-            done = self.state==self.done_moving_flag
+            done = self.state in self.READY_STATES
         # checks the movement is completely done (for fine movement endings can be the case)
+    
     
     def move_absolute_async(self, new_pos, verbose=False):
         """
@@ -183,14 +207,19 @@ class ConexCC:
             done = True
         return done
     
+    
     def move_absolute_sync(self, new_pos, timeout=30, n_retry=3, verbose=False):
+        """
+        The unit of distance is mm
+        """
         done = self.move_absolute_async(new_pos, verbose=verbose)
         time_start = time.time()
         while not done:
             if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
-            done = self.state==self.done_moving_flag
+            done = self.state in self.READY_STATES
+            
             
     def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
         self.move_absolute_sync(new_pos/1e3, 
