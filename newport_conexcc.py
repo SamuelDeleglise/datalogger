@@ -13,6 +13,31 @@ DEV = 1                # hardcoded here to the first device
 class ConexCC:
     MAX_VELOCITY = 0.4
     READY_STATES = ['32', '33', '34', '36', '37', '38']
+    POSSIBLE_STATES = '''===== Conex-CC Controller States =====
+            – 0A: NOT REFERENCED from RESET.
+            – 0B: NOT REFERENCED from HOMING.
+            – 0C: NOT REFERENCED from CONFIGURATION.
+            – 0D: NOT REFERENCED from DISABLE.
+            – 0E: NOT REFERENCED from READY.
+            – 0F: NOT REFERENCED from MOVING.
+            – 10: NOT REFERENCED - NO PARAMETERS IN MEMORY.
+            – 14: CONFIGURATION.
+            – 1E: HOMING.
+            – 28: MOVING.
+            – 32: READY from HOMING.
+            – 33: READY from MOVING.
+            – 34: READY from DISABLE.
+            – 36: READY T from READY.
+            – 37: READY T from TRACKING.
+            – 38: READY T from DISABLE T.
+            – 3C: DISABLE from READY.
+            – 3D: DISABLE from MOVING.
+            – 3E: DISABLE from TRACKING.
+            – 3F: DISABLE from READY T.
+            – 46: TRACKING from READY T.
+            – 47: TRACKING from TRACKING.  
+            ===========================================      
+        '''
     
     def __init__(self, com_port, velocity):
         self.min_limit = -1
@@ -226,6 +251,11 @@ class ConexCC:
                                 timeout=timeout, n_retry=n_retry, 
                                 verbose=verbose)
      
+    @property
+    def possible_states(self):
+        print(self.POSSIBLE_STATES)
+        return None
+    
     @property
     def cur_pos_mm(self):
         err_str = ''
