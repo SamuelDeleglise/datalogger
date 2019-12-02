@@ -110,11 +110,6 @@ class ConexCC:
             print('Positive SW Limit = %.1f mm' % resp)
             self.max_limit = resp
             
-            
-    def is_ready(self):
-        state = self.state
-        return state in self.READY_STATES
-    
         
     def set_state(self, state, err_str=''):
         res, err_str = self.driver.MM_Set(DEV, state, err_str)
@@ -185,8 +180,12 @@ class ConexCC:
         '''
         The units of the distance is um. 
         Moves the given distance from its original position
-        '''
-        if self.is_ready():
+        returns:
+            done: if the command has been sent, done=False (i.e. moving not done)
+            err_str: the error string sent back by the device. If everything ok,
+            err_str=''.
+            '''
+        if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PR_Set(DEV, distance_um/1000, err_str)
             if res != 0 or err_str != '':
@@ -195,17 +194,21 @@ class ConexCC:
                 if verbose: print('Moving Relative %.3f um' % distance_um)
             done = False
         else:
-            print('Stage not ready')
+            err_str = 'Stage not ready'
+            print(err_str)
             done = True
-        return done
+        return done, err_str
                 
     
     def move_relative_sync(self, distance_um, timeout=30, n_retry=3, verbose=False):
         '''
         The units of the distance is um. 
         Moves the given distance from its original position
+        returns:
+            err_str: the error string sent back by the device. If everything ok,
+            err_str=''.
         '''
-        done = self.move_relative_async(distance_um, verbose=verbose)
+        done, err_str = self.move_relative_async(distance_um, verbose=verbose)
         time_start = time.time()
         while not done:
             if time.time() - time_start > timeout:
@@ -213,13 +216,14 @@ class ConexCC:
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
         # checks the movement is completely done (for fine movement endings can be the case)
+        return err_str
     
     
     def move_absolute_async(self, new_pos, verbose=False):
         """
         The unit of distance is in mm.
         """
-        if self.is_ready():
+        if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PA_Set(DEV, new_pos, err_str)
             if res != 0 or err_str != '':
@@ -228,22 +232,24 @@ class ConexCC:
                 if verbose: print('Moving to position %.3f mm' % new_pos)
             done = False
         else:
-            print('Stage not ready')
+            err_str = 'Stage not ready'
+            print(err_str)
             done = True
-        return done
+        return done, err_str
     
     
     def move_absolute_sync(self, new_pos, timeout=30, n_retry=3, verbose=False):
         """
         The unit of distance is mm
         """
-        done = self.move_absolute_async(new_pos, verbose=verbose)
+        done, err_str = self.move_absolute_async(new_pos, verbose=verbose)
         time_start = time.time()
         while not done:
             if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
+        return err_str
             
             
     def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
@@ -251,10 +257,12 @@ class ConexCC:
                                 timeout=timeout, n_retry=n_retry, 
                                 verbose=verbose)
      
+        
     @property
     def possible_states(self):
         print(self.POSSIBLE_STATES)
         return None
+    
     
     @property
     def cur_pos_mm(self):
@@ -264,6 +272,7 @@ class ConexCC:
         if res != 0 or err_str != '':
             print('Oops: Current Position: result=%d,response=%.2f,errString=\'%s\'' % (res, resp, err_str))
         return resp
+    
     
     @property    
     def cur_pos(self):
@@ -309,8 +318,14 @@ class ConexCC:
     @state.setter
     def state(self, resp):
         self._state =  resp
-        
-        
+    
+    
+    @property
+    def is_ready(self):
+        state = self.state
+        return state in self.READY_STATES
+    
+    
     @property
     def error(self):
         err_str = ''
