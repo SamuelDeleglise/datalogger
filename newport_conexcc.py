@@ -172,7 +172,7 @@ class ConexCC:
         Initializes the position.
         It remembers where is was and comes back to that position
         """
-        old_pos = self.cur_pos_mm
+        old_pos = self.cur_pos
         self.init_position_sync()
         self.move_absolute_sync(old_pos)
 
@@ -189,15 +189,12 @@ class ConexCC:
             err_str = ''
             res, err_str = self.driver.PR_Set(DEV, distance_um/1000, err_str)
             if res != 0 or err_str != '':
-                print('Oops: Move Relative: result=%d,errString=\'%s\'' % (res, err_str))
+                raise ValueError("Move went wrong: " + err_str)
             else:
                 if verbose: print('Moving Relative %.3f um' % distance_um)
-            done = False
         else:
-            err_str = 'Stage not ready'
-            print(err_str)
-            done = True
-        return done, err_str
+            raise ValueError("Stage not ready: " + self.state)
+
                 
     
     def move_relative_sync(self, distance_um, timeout=30, n_retry=3, verbose=False):
@@ -208,55 +205,50 @@ class ConexCC:
             err_str: the error string sent back by the device. If everything ok,
             err_str=''.
         '''
-        done, err_str = self.move_relative_async(distance_um, verbose=verbose)
+        self.move_relative_async(distance_um, verbose=verbose)
         time_start = time.time()
+        done = False
         while not done:
             if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
         # checks the movement is completely done (for fine movement endings can be the case)
-        return err_str
     
     
     def move_absolute_async(self, new_pos, verbose=False):
         """
-        The unit of distance is in mm.
+        The unit of distance is in um.
         """
         if self.is_ready:
             err_str = ''
-            res, err_str = self.driver.PA_Set(DEV, new_pos, err_str)
+            res, err_str = self.driver.PA_Set(DEV, 1e-3*new_pos, err_str)
             if res != 0 or err_str != '':
-                print('Oops: Move Absolute: result=%d,errString=\'%s\'' % (res, err_str))
+                raise ValueError("Move went wrong: " + err_str)
             else:
                 if verbose: print('Moving to position %.3f mm' % new_pos)
-            done = False
         else:
-            err_str = 'Stage not ready'
-            print(err_str)
-            done = True
-        return done, err_str
-    
+            raise ValueError("Stage not ready " + self.state)
     
     def move_absolute_sync(self, new_pos, timeout=30, n_retry=3, verbose=False):
         """
-        The unit of distance is mm
+        The unit of distance is um
         """
-        done, err_str = self.move_absolute_async(new_pos, verbose=verbose)
+        self.move_absolute_async(new_pos, verbose=verbose)
         time_start = time.time()
+        done = False
         while not done:
             if time.time() - time_start > timeout:
                 raise ValueError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
-        return err_str
             
-            
-    def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
-        self.move_absolute_sync(new_pos/1e3, 
-                                timeout=timeout, n_retry=n_retry, 
-                                verbose=verbose)
-     
+#            
+#    def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
+#        self.move_absolute_sync(new_pos/1e3, 
+#                                timeout=timeout, n_retry=n_retry, 
+#                                verbose=verbose)
+#     
         
     @property
     def possible_states(self):
@@ -345,3 +337,4 @@ class ConexCC:
     def close(self):
         # note that closing the communication will NOT stop the motor!
         self.driver.CloseInstrument()
+        
