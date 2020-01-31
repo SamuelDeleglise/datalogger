@@ -38,6 +38,7 @@ class ConexCC:
             – 47: TRACKING from TRACKING.  
             ===========================================      
         '''
+    MAX_RUN = 35000 #empirically measured
     
     def __init__(self, com_port, velocity):
         self.min_limit = -1
@@ -61,34 +62,9 @@ class ConexCC:
             print('Current Position = %.3f mm' % self.cur_pos_mm)
 
 
-    @classmethod
-    def dump_possible_states(cls):
+    def dump_possible_states(self):
         # https://www.newport.com/mam/celum/celum_assets/resources/CONEX-CC_-_Controller_Documentation.pdf#page=54
-        help_text = '''===== Conex-CC Controller States =====
-            – 0A: NOT REFERENCED from RESET.
-            – 0B: NOT REFERENCED from HOMING.
-            – 0C: NOT REFERENCED from CONFIGURATION.
-            – 0D: NOT REFERENCED from DISABLE.
-            – 0E: NOT REFERENCED from READY.
-            – 0F: NOT REFERENCED from MOVING.
-            – 10: NOT REFERENCED - NO PARAMETERS IN MEMORY.
-            – 14: CONFIGURATION.
-            – 1E: HOMING.
-            – 28: MOVING.
-            – 32: READY from HOMING.
-            – 33: READY from MOVING.
-            – 34: READY from DISABLE.
-            – 36: READY T from READY.
-            – 37: READY T from TRACKING.
-            – 38: READY T from DISABLE T.
-            – 3C: DISABLE from READY.
-            – 3D: DISABLE from MOVING.
-            – 3E: DISABLE from TRACKING.
-            – 3F: DISABLE from READY T.
-            – 46: TRACKING from READY T.
-            – 47: TRACKING from TRACKING.  
-            ===========================================      
-        '''
+        help_text = self.POSSIBLE_STATES
         for s in help_text.split('\n'):
             print(s.strip(' '))
 
@@ -185,6 +161,10 @@ class ConexCC:
             err_str: the error string sent back by the device. If everything ok,
             err_str=''.
             '''
+        cur_pos = self.cur_pos
+        if cur_pos + distance_um>self.MAX_RUN:
+            text = 'cannot exceed 50mm of run length'
+            raise ValueError(text)
         if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PR_Set(DEV, distance_um/1000, err_str)
@@ -220,6 +200,9 @@ class ConexCC:
         """
         The unit of distance is in um.
         """
+        if new_pos>self.MAX_RUN:
+            text = 'cannot exceed 50mm of run length'
+            raise ValueError(text)
         if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PA_Set(DEV, 1e-3*new_pos, err_str)
