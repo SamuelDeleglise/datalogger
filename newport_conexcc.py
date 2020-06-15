@@ -9,6 +9,13 @@ import time
 
 DEV = 1                # hardcoded here to the first device
 
+class CCMotorStateError(Exception):
+    pass
+class CCMotorTimeoutError(Exception):
+    pass
+class CCMotorRangeExceededError(Exception):
+    pass
+
 
 class ConexCC:
     MAX_VELOCITY = 0.4
@@ -138,7 +145,7 @@ class ConexCC:
         done = False
         while not done:
             if time.time() - time_start > timeout:
-                raise ValueError("Timeout in move")
+                raise CCMotorTimeoutError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
         
@@ -163,8 +170,7 @@ class ConexCC:
             '''
         cur_pos = self.cur_pos
         if cur_pos + distance_um>self.MAX_RUN:
-            text = 'cannot exceed 50mm of run length'
-            raise ValueError(text)
+            self.raise_out_of_range_err()
         if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PR_Set(DEV, distance_um/1000, err_str)
@@ -173,7 +179,7 @@ class ConexCC:
             else:
                 if verbose: print('Moving Relative %.3f um' % distance_um)
         else:
-            raise ValueError("Stage not ready: " + self.state)
+            raise CCMotorStateError("Stage not ready: " + self.state)
 
                 
     
@@ -190,7 +196,7 @@ class ConexCC:
         done = False
         while not done:
             if time.time() - time_start > timeout:
-                raise ValueError("Timeout in move")
+                raise CCMotorTimeoutError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
         # checks the movement is completely done (for fine movement endings can be the case)
@@ -201,8 +207,7 @@ class ConexCC:
         The unit of distance is in um.
         """
         if new_pos>self.MAX_RUN:
-            text = 'cannot exceed 50mm of run length'
-            raise ValueError(text)
+           self.raise_out_of_range_err()
         if self.is_ready:
             err_str = ''
             res, err_str = self.driver.PA_Set(DEV, 1e-3*new_pos, err_str)
@@ -211,7 +216,7 @@ class ConexCC:
             else:
                 if verbose: print('Moving to position %.3f mm' % new_pos)
         else:
-            raise ValueError("Stage not ready " + self.state)
+            raise CCMotorStateError("Stage not ready " + self.state)
     
     def move_absolute_sync(self, new_pos, timeout=30, n_retry=3, verbose=False):
         """
@@ -222,10 +227,14 @@ class ConexCC:
         done = False
         while not done:
             if time.time() - time_start > timeout:
-                raise ValueError("Timeout in move")
+                raise CCMotorTimeoutError("Timeout in move")
             time.sleep(self.movement_sleep_time)
             done = self.state in self.READY_STATES
-            
+    
+    def raise_out_of_range_err(self):
+        max_run_txt = str(int(self.MAX_RUN/1e3))
+        text = 'cannot exceed ' + max_run_txt + 'mm of run length'
+        raise CCMotorRangeExceededError(text)
 #            
 #    def move_absolute_sync_um(self, new_pos, timeout=30, n_retry=3, verbose=False):
 #        self.move_absolute_sync(new_pos/1e3, 

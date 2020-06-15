@@ -1,8 +1,8 @@
-from serial import Serial
-from .wiznet import SerialFromEthernet
+#from serial import Serial
+#from .wiznet import SerialFromEthernet
 
 from .serial_interface import SerialInstrument
-import socket
+#import socket
 
 class PressureGauge(SerialInstrument):
     parity = 'O'
@@ -13,3 +13,7 @@ class PressureGauge(SerialInstrument):
     async def pressure(self):
         res = await self.serial.ask("?GA1")
         return float(res)
+
+    async def test(self):
+        res = await self.serial.ask("?IDN")
+        return res
